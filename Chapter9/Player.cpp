@@ -134,7 +134,7 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
             OutputDebugStringW(errMsg);
             OutputDebugStringW(L"\n");
             hr = hrStatus;
-            //break;
+            break;
         }
 
         // Switch on the event type. Update the internal state of the CPlayer as needed.
@@ -165,7 +165,9 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
     if(FAILED(hr))
     {
         WCHAR msg[MAX_PATH] = {'\0'};
-        StringCchPrintf(msg, MAX_PATH, L"CPlayer::ProcessEvent(): An error has occured: 0x%08x", hr);
+        _com_error err(hrStatus);
+        LPCTSTR errMsg = err.ErrorMessage();
+        StringCchPrintf(msg, MAX_PATH, errMsg, hr);
 
         MessageBoxW(NULL, msg, L"Error", MB_OK | MB_ICONEXCLAMATION);
     }

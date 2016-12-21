@@ -492,18 +492,17 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * out_mf_medi
         MF_ACCESSMODE_WRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE,
         filePath, &byte_stream);
     THROW_ON_FAIL(hr);
-    hr = MFCreateMediaType(&out_mf_media_type);
-    THROW_ON_FAIL(hr);
+
     hr = out_mf_media_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
-    THROW_ON_FAIL(hr);
+    THROW_ON_FAIL(hr);/*
     hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_SIZE, 1920, 1080);
     THROW_ON_FAIL(hr);
     hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_RATE, 78125, 3113);
     THROW_ON_FAIL(hr);
     hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
-    THROW_ON_FAIL(hr);
+    THROW_ON_FAIL(hr);*/
     hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     THROW_ON_FAIL(hr);
     // Stream Sink を取得する
