@@ -114,17 +114,6 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
         // not succeed, the status is a failure code.
         hr = mediaEvent->GetStatus(&hrStatus);
         BREAK_ON_FAIL(hr);
-
-        if (eventType == MESessionTopologySet) {
-            OutputDebugStringW(L"Topology resolved and set on the media session.\n");
-        }
-        if (eventType == MESessionStopped) {
-            OutputDebugStringW(L"Media session is stopped.\n");
-        }
-        if (eventType == MESessionStarted) {
-            OutputDebugStringW(L"Media session is started.\n");
-        }
-
         // Check if the async operation succeeded.
         if (FAILED(hrStatus))
         {
@@ -136,6 +125,18 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
             hr = hrStatus;
             break;
         }
+
+        if (eventType == MESessionTopologySet) {
+            OutputDebugStringW(L"Topology resolved and set on the media session.\n");
+        }
+        if (eventType == MESessionStopped) {
+            OutputDebugStringW(L"Media session is stopped.\n");
+        }
+        if (eventType == MESessionStarted) {
+            OutputDebugStringW(L"Media session is started.\n");
+        }
+
+       
 
         // Switch on the event type. Update the internal state of the CPlayer as needed.
         if(eventType == MESessionTopologyStatus)
@@ -227,7 +228,8 @@ HRESULT CPlayer::OpenCamera(HWND renderHwnd) {
     CComPtr<IMFTopology> pTopology = NULL;
     HRESULT hr = S_OK;
     if (m_pSession != NULL) {
-        m_topoBuilder.Finish(m_pSession);
+        hr = CloseSession();
+        m_pSession = NULL;
         return S_OK;
     }
     else {
@@ -281,9 +283,7 @@ HRESULT CPlayer::OpenURL(PCWSTR sURL, HWND renderHwnd, bool network)
 
     // Step 1: create a media session if one doesn't exist already
     if (m_pSession != NULL) {
-        m_pSession->Shutdown();
-        m_pSession = NULL;
-        return S_OK;
+        hr = CloseSession();
     }
     hr = CreateSession();
     THROW_ON_FAIL(hr);
@@ -557,7 +557,7 @@ HRESULT CPlayer::CreateSession(void)
     do
     {
         // close the session if one is already created
-        hr = CloseSession();
+     
         BREAK_ON_FAIL(hr);
 
         assert(m_state == PlayerState_Closed);

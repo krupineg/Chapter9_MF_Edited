@@ -100,41 +100,36 @@ HRESULT copyTypeParameters(IMFMediaType * in_media_type, IMFMediaType * out_mf_m
     UINT32 aspectRatio = 0;
     UINT32 interlace = 0;
     UINT32 denominator = 0;
-    DWORD32 width, height;
+    UINT32 width, height;
     HRESULT hr = S_OK;
+  
     UINT8 blob[] = { 0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0xc0, 0x1e, 0x96, 0x54, 0x05, 0x01,
         0xe9, 0x80, 0x80, 0x40, 0x00, 0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80 };
     //hr = out_mf_media_type->SetBlob(MF_MT_MPEG_SEQUENCE_HEADER, blob, 24);
     THROW_ON_FAIL(hr);
     //hr = out_mf_media_type->SetUINT32(MF_MPEG4SINK_SPSPPS_PASSTHROUGH, TRUE);
     THROW_ON_FAIL(hr);
-    //hr = out_mf_media_type->SetBlob(MF_MT_MPEG4_SAMPLE_DESCRIPTION, blob, 24);
+    hr = out_mf_media_type->SetBlob(MF_MT_MPEG4_SAMPLE_DESCRIPTION, blob, 24);
     THROW_ON_FAIL(hr);
-
-
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AVG_BITRATE);    
     THROW_ON_FAIL(hr);
-    hr = MFGetAttributeSize(in_media_type, MF_MT_FRAME_SIZE, &width, &height);
+    hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_SIZE, &width, &height);
     THROW_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_RATE, &frameRate, &frameRateDenominator);
     THROW_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_PIXEL_ASPECT_RATIO, &aspectRatio, &denominator);
     THROW_ON_FAIL(hr);
-    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_SIZE, 1920, 1080);
+    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_SIZE, width, height);
     THROW_ON_FAIL(hr);
-    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_RATE, 78125, 3113);
+    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_RATE, frameRate, frameRateDenominator);
     THROW_ON_FAIL(hr);
-    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
+    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO, aspectRatio, denominator);
     THROW_ON_FAIL(hr);
    /* hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_SIZE);
     THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_RATE);
     THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO);*/
-    THROW_ON_FAIL(hr);
-
-
-    hr = out_mf_media_type->SetUINT32(MFT_HW_TIMESTAMP_WITH_QPC_Attribute, TRUE);
     THROW_ON_FAIL(hr);
 
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_INTERLACE_MODE);
@@ -360,13 +355,13 @@ IMFTopologyNode* AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * 
     GUID minorType = GetVideoSubtype(mediaType);
     if (minorType != MFVideoFormat_H264) {
         DetectSubtype(minorType);
-        //CComPtr<IMFTransform> color;
+        CComPtr<IMFTransform> color;
         CComPtr<IMFTransform> transform;
-       // color = CreateColorConverterMFT();
+        color = CreateColorConverterMFT();
         transform = CreateVideoEncoderMFT(mediaType, MFVideoFormat_H264);
         hr = AddTransformNode(topology, transform, output_node, &transformNode);
         THROW_ON_FAIL(hr);
-       // hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
+        hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
         THROW_ON_FAIL(hr);
         return transformNode.Detach();
     }
@@ -383,7 +378,7 @@ IMFTopologyNode* AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * 
 HRESULT CTopoBuilder::RenderURL(PCWSTR fileUrl, HWND videoHwnd, bool addNetwork)
 {
     HRESULT hr = S_OK;
-
+    ToFile(addNetwork);
     m_videoHwnd = videoHwnd;
 
     // The topology can have either a rendering sink (when videoHwnd is not NULL), a 
@@ -482,27 +477,23 @@ HRESULT CTopoBuilder::CreateNetworkSink(DWORD requestPort)
     THROW_ON_FAIL(hr);
 }
 
-HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * out_mf_media_type)
+HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media_type)
 {
     HRESULT hr = S_OK;
-
+    CComPtr<IMFMediaType> out_mf_media_type;
     CComPtr<IMFByteStream> byte_stream;
     CComPtr<IMFStreamSink> stream_sink;
     hr = MFCreateFile(
         MF_ACCESSMODE_WRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE,
         filePath, &byte_stream);
     THROW_ON_FAIL(hr);
-
+    hr = MFCreateMediaType(&out_mf_media_type);
+    THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
-    THROW_ON_FAIL(hr);/*
-    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_SIZE, 1920, 1080);
     THROW_ON_FAIL(hr);
-    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_RATE, 78125, 3113);
-    THROW_ON_FAIL(hr);
-    hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
-    THROW_ON_FAIL(hr);*/
+    copyTypeParameters(in_mf_media_type, out_mf_media_type);
     hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     THROW_ON_FAIL(hr);
     // Stream Sink を取得する
@@ -859,12 +850,8 @@ HRESULT CTopoBuilder::CreateOutputNode(
     if(toFile && 
         majorType == MFMediaType_Video)
     {
-        CComPtr<IMFMediaType> file_sink_media_type;
-        hr = MFCreateMediaType(&file_sink_media_type);
         THROW_ON_FAIL(hr);
-        hr = copyTypeParameters(in_media_type, file_sink_media_type);
-        THROW_ON_FAIL(hr);
-        hr = CreateFileSink(L"C:\\Users\\Public\\Encoded2.mp4", file_sink_media_type);
+        hr = CreateFileSink(L"C:\\Users\\Public\\Encoded2.mp4", in_media_type);
         THROW_ON_FAIL(hr);
         CComPtr<IMFTopologyNode> pOldOutput = pOutputNode;
         pOutputNode = NULL;
