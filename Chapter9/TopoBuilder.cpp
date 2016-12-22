@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include "TopoBuilder.h"
 
+#include "mftransform.h"
+#include <MMSystem.h>
+#include "SampleTransform.h"
 #include <shlwapi.h>
 #include <map>
 #include <Wmcodecdsp.h>
@@ -100,19 +103,19 @@ HRESULT copyTypeParameters(IMFMediaType * in_media_type, IMFMediaType * out_mf_m
     UINT32 aspectRatio = 0;
     UINT32 interlace = 0;
     UINT32 denominator = 0;
-    UINT32 width, height;
+    UINT32 width, height, bitrate;
     HRESULT hr = S_OK;
   
     UINT8 blob[] = { 0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0xc0, 0x1e, 0x96, 0x54, 0x05, 0x01,
         0xe9, 0x80, 0x80, 0x40, 0x00, 0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80 };
-    //hr = out_mf_media_type->SetBlob(MF_MT_MPEG_SEQUENCE_HEADER, blob, 24);
-    THROW_ON_FAIL(hr);
-    //hr = out_mf_media_type->SetUINT32(MF_MPEG4SINK_SPSPPS_PASSTHROUGH, TRUE);
-    THROW_ON_FAIL(hr);
+    
     hr = out_mf_media_type->SetBlob(MF_MT_MPEG4_SAMPLE_DESCRIPTION, blob, 24);
     THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AVG_BITRATE);    
     THROW_ON_FAIL(hr);
+
+    out_mf_media_type->GetUINT32(MF_MT_AVG_BITRATE, &bitrate);
+
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_SIZE, &width, &height);
     THROW_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_RATE, &frameRate, &frameRateDenominator);
@@ -131,11 +134,24 @@ HRESULT copyTypeParameters(IMFMediaType * in_media_type, IMFMediaType * out_mf_m
     THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO);*/
     THROW_ON_FAIL(hr);
-
+    
+    //hr = out_mf_media_type->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);
+    THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_INTERLACE_MODE);
     THROW_ON_FAIL(hr);
     return hr;
 }
+
+
+IMFTransform * CreateSampleTransform() {
+    //create color converter
+    /*HRESULT hr = DllRegisterServer();
+    THROW_ON_FAIL(hr);
+    IMFTransform *sampleTransform = NULL;
+    hr = CoCreateInstance(CLSID_SampleTransformMFT, NULL, CLSCTX_INPROC_SERVER, IID_IMFTransform, (void**)&sampleTransform);*/
+    return new (std::nothrow) SampleTransform();
+}
+
 
 IMFTransform* CreateColorConverterMFT()
 {
@@ -350,26 +366,30 @@ IMFTopologyNode* AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * 
 {
     CComPtr<IMFTopologyNode> transformNode;
     CComPtr<IMFTopologyNode> colorConverterNode;
+    CComPtr<IMFTopologyNode> sampleTransformNode;
     HRESULT hr = S_OK;
     IMFMediaType * mediaType = GetMediaType(pStreamDescriptor);
     GUID minorType = GetVideoSubtype(mediaType);
     if (minorType != MFVideoFormat_H264) {
         DetectSubtype(minorType);
         CComPtr<IMFTransform> color;
+        CComPtr<IMFTransform> sampleTransform;
         CComPtr<IMFTransform> transform;
         color = CreateColorConverterMFT();
         transform = CreateVideoEncoderMFT(mediaType, MFVideoFormat_H264);
+        sampleTransform = CreateSampleTransform();
+        //hr = AddTransformNode(topology, sampleTransform, output_node, &sampleTransformNode);
+        //THROW_ON_FAIL(hr);
         hr = AddTransformNode(topology, transform, output_node, &transformNode);
         THROW_ON_FAIL(hr);
-        hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
-        THROW_ON_FAIL(hr);
+        /*hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
+        THROW_ON_FAIL(hr);*/
         return transformNode.Detach();
     }
     else {
         return output_node;
     }
 }
-
 
 //
 // Initiates topology building from the file URL by first creating a media source, and then
@@ -480,6 +500,7 @@ HRESULT CTopoBuilder::CreateNetworkSink(DWORD requestPort)
 HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media_type)
 {
     HRESULT hr = S_OK;
+    
     CComPtr<IMFMediaType> out_mf_media_type;
     CComPtr<IMFByteStream> byte_stream;
     CComPtr<IMFStreamSink> stream_sink;
@@ -493,9 +514,11 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
     THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
     THROW_ON_FAIL(hr);
-    copyTypeParameters(in_mf_media_type, out_mf_media_type);
+    hr = copyTypeParameters(in_mf_media_type, out_mf_media_type);
+    THROW_ON_FAIL(hr);
     hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     THROW_ON_FAIL(hr);
+    
     // Stream Sink を取得する
     return hr;
 }
@@ -620,9 +643,10 @@ HRESULT CTopoBuilder::AfterSessionClose(IMFMediaSession * m_pSession) {
     }
     if (m_pSession) {
         hr = m_pSession->Shutdown();
+        
         THROW_ON_FAIL(hr);
         m_pSession = NULL;
-    }    
+    }        
 }
 
 //
@@ -981,12 +1005,3 @@ HRESULT CTopoBuilder::CreateTeeNetworkTwig(IMFStreamDescriptor* pStreamDescripto
 
     return hr;
 }
-
-
-
-
-
-
-
-
-
