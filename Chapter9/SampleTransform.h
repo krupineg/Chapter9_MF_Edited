@@ -71,9 +71,11 @@ public:
 
 private:
 
+    MFTIME prevBefore, prevAfter;
     volatile long m_cRef;                             // ref count
     CComAutoCriticalSection m_critSec;       // critical section for the MFT
-    MFTIME timeOffset = NULL;    
+    MFTIME timeOffset = 0;    
+    bool firstSample = 0;
     CComPtr<IMFSample>  m_pSample;           // Input sample.
     CComPtr<IMFMediaType> m_pInputType;      // Input media type.
     CComPtr<IMFMediaType> m_pOutputType;     // Output media type.

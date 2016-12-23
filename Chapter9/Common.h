@@ -3,7 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <assert.h>
 #include <atlbase.h>
-
+#include "helpers.h"
 using namespace std;
 using namespace ATL;
 

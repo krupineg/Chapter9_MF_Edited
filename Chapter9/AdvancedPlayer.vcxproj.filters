@@ -22,6 +22,9 @@
     <ClCompile Include="SampleTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -46,6 +49,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="SampleTransform.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="helpers.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

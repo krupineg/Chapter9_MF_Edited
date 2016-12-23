@@ -5,7 +5,9 @@
 #include <Mferror.h>
 #include <MFapi.h>
 SampleTransform::SampleTransform(void) :
-    m_cRef(1)
+    m_cRef(1),
+    firstSample(true),
+    prevAfter(0)
 {
 }
 
@@ -819,27 +821,37 @@ HRESULT SampleTransform::ProcessOutput(
         // input is needed.
         BREAK_ON_NULL(m_pSample, MF_E_TRANSFORM_NEED_MORE_INPUT);
 
-        MFTIME currentSampleTime; 
+        MFTIME currentSampleTime, duration; 
         hr = m_pSample->GetSampleTime(&currentSampleTime);
         THROW_ON_FAIL(hr);
+    
+        hr = m_pSample->GetSampleDuration(&duration);
+        THROW_ON_FAIL(hr);
 
-        if (timeOffset == 0) {
+        if (firstSample) {
+            firstSample = false;
             timeOffset = currentSampleTime;
         }
+       
+        MFTIME newtSampleTime = currentSampleTime - timeOffset;
+        if (prevAfter <= newtSampleTime) {
 
-        currentSampleTime = currentSampleTime - timeOffset;
-        hr = m_pSample->SetUINT32(MFSampleExtension_Discontinuity, FALSE);
-        THROW_ON_FAIL(hr);
-        hr = m_pSample->SetSampleTime(currentSampleTime);
-        THROW_ON_FAIL(hr);
+            DebugLongLong(L"raw: ", currentSampleTime);
+            DebugLongLong(L"shifted: ", newtSampleTime);
 
-        // Detach the output sample from the MFT and put the pointer for
-        // the processed sample into the output buffer
-        pOutputSampleBuffer[0].pSample = m_pSample.Detach();
+            //hr = m_pSample->SetSampleTime(newtSampleTime);
+            THROW_ON_FAIL(hr);
 
-        // Set status flags for output
-        pOutputSampleBuffer[0].dwStatus = 0;
-        *pdwStatus = 0;
+            // Detach the output sample from the MFT and put the pointer for
+            // the processed sample into the output buffer
+            pOutputSampleBuffer[0].pSample = m_pSample.Detach();
+
+            // Set status flags for output
+            pOutputSampleBuffer[0].dwStatus = 0;
+            *pdwStatus = 0;
+        }
+        
+        prevAfter = newtSampleTime;
     } while (false);
 
     return hr;
@@ -875,6 +887,21 @@ HRESULT SampleTransform::GetSupportedMediaType(
         if (dwTypeIndex == 0)
         {
             hr = pmt->SetGUID(MF_MT_SUBTYPE, MEDIASUBTYPE_H264);
+        }
+        else if (dwTypeIndex == 1)
+        {
+            hr = pmt->SetGUID(MF_MT_SUBTYPE, MEDIASUBTYPE_RGB24);
+        }
+        else if (dwTypeIndex == 2)
+        {
+            hr = pmt->SetGUID(MF_MT_SUBTYPE, MEDIASUBTYPE_RGB32);
+        }
+        else if (dwTypeIndex == 3)
+        {
+            hr = pmt->SetGUID(MF_MT_SUBTYPE, MEDIASUBTYPE_YUY2);
+        }
+        else if (dwTypeIndex == 4) {
+            hr = pmt->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_IYUV);
         }
         else
         {
@@ -932,23 +959,13 @@ HRESULT SampleTransform::CheckMediaType(IMFMediaType* pmt)
 
         // verify that the specified media type has one of the acceptable subtypes -
         // this filter will accept only NV12 and UYVY uncompressed subtypes.
-        if (subtype != MEDIASUBTYPE_H264)
+        if (subtype != MEDIASUBTYPE_H264 && subtype != MEDIASUBTYPE_RGB24 && subtype != MEDIASUBTYPE_RGB32 && subtype != MEDIASUBTYPE_YUY2 && subtype != MFVideoFormat_IYUV)
         {
+           
             hr = MF_E_INVALIDMEDIATYPE;
             break;
         }
-
-        // get the requested interlacing format
-        hr = pType->GetUINT32(MF_MT_INTERLACE_MODE, (UINT32*)&interlacingMode);
-        BREAK_ON_FAIL(hr);
-
-        // since we want to deal only with progressive (non-interlaced) frames, make sure
-        // we fail if we get anything but progressive
-        if (interlacingMode != MFVideoInterlace_Progressive)
-        {
-            hr = MF_E_INVALIDMEDIATYPE;
-            break;
-        }
+        
     } while (false);
 
     return hr;
