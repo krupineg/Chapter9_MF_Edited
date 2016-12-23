@@ -64,6 +64,14 @@ void DebugLongLong(std::wstring pref, LONGLONG anything) {
     OutputDebugStringW(strng.c_str());
 }
 
+void DebugInfo(std::wstring info) {
+    std::wstring strng;
+    std::wstringstream strstream;
+    strstream << info;
+    strng = strstream.str();
+    OutputDebugStringW(strng.c_str());
+}
+
 IMFMediaType* GetMediaType(IMFStreamDescriptor * pStreamDescriptor) {
     HRESULT hr = S_OK;
     CComPtr<IMFMediaTypeHandler>  handler;

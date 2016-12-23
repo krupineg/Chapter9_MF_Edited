@@ -1,9 +1,5 @@
 #pragma once
 #include "SampleTransform.h"
-#include <MMSystem.h>
-#include <uuids.h>
-#include <Mferror.h>
-#include <MFapi.h>
 SampleTransform::SampleTransform(void) :
     m_cRef(1),
     firstSample(true),

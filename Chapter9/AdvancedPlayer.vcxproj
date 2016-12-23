@@ -226,18 +226,22 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SampleTransform.cpp" />
     <ClCompile Include="TopoBuilder.cpp" />
+    <ClCompile Include="VideoSink.cpp" />
     <ClCompile Include="winmain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AsyncCB.h" />
     <ClInclude Include="ByteStreamWriteData.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="helpers.h" />
     <ClInclude Include="HttpOutputStreamActivate.h" />
     <ClInclude Include="HttpOutputByteStream.h" />
+    <ClInclude Include="LinkList.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SampleTransform.h" />
     <ClInclude Include="TopoBuilder.h" />
+    <ClInclude Include="VideoSink.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AdvancedPlayer.rc" />

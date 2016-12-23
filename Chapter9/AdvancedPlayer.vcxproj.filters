@@ -25,6 +25,9 @@
     <ClCompile Include="helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VideoSink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -52,6 +55,15 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="helpers.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="LinkList.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="AsyncCB.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
