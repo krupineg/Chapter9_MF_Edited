@@ -1,6 +1,8 @@
 #pragma once
 #include "Common.h"
 
+#include <mfreadwrite.h>
+
 class SampleGrabberCB : public IMFSampleGrabberSinkCallback
 {
     bool stopped;
