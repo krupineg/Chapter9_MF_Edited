@@ -28,6 +28,9 @@
     <ClCompile Include="VideoSink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SampleGrabberCB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -64,6 +67,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="AsyncCB.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="SampleGrabberCB.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
