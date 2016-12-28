@@ -90,6 +90,12 @@ GUID GetVideoSubtype(IMFMediaType * mediaType) {
     return minorType;
 }
 
+GUID GetMajorType(IMFMediaType * mediaType) {
+    GUID major;
+    HRESULT hr = mediaType->GetMajorType(&major);
+    THROW_ON_FAIL(hr);
+    return major;
+}
 
 HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key)
 {
@@ -108,7 +114,7 @@ HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key
     return hr;
 }
 
-HRESULT copyTypeParameters(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type) {
+HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type) {
     UINT32 frameRate = 0;
     UINT32 frameRateDenominator;
     UINT32 aspectRatio = 0;
@@ -116,17 +122,13 @@ HRESULT copyTypeParameters(IMFMediaType * in_media_type, IMFMediaType * out_mf_m
     UINT32 denominator = 0;
     UINT32 width, height, bitrate;
     HRESULT hr = S_OK;
-
-    UINT8 blob[] = { 0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0xc0, 0x1e, 0x96, 0x54, 0x05, 0x01,
-        0xe9, 0x80, 0x80, 0x40, 0x00, 0x00, 0x00, 0x01, 0x68, 0xce, 0x3c, 0x80 };
-
-    hr = out_mf_media_type->SetBlob(MF_MT_MPEG4_SAMPLE_DESCRIPTION, blob, 24);
-    THROW_ON_FAIL(hr);
+   
+    THROW_ON_FAIL(hr);   
+   
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AVG_BITRATE);
     THROW_ON_FAIL(hr);
-
+    
     out_mf_media_type->GetUINT32(MF_MT_AVG_BITRATE, &bitrate);
-
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_SIZE, &width, &height);
     THROW_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_RATE, &frameRate, &frameRateDenominator);
@@ -144,19 +146,57 @@ HRESULT copyTypeParameters(IMFMediaType * in_media_type, IMFMediaType * out_mf_m
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_RATE);
     THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO);*/
-    THROW_ON_FAIL(hr);
+   THROW_ON_FAIL(hr);
 
-    //hr = out_mf_media_type->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);
+    hr = out_mf_media_type->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);
     THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_INTERLACE_MODE);
     THROW_ON_FAIL(hr);
     return hr;
 }
 
+HRESULT IPropertyStore_CopyFromAttribute(IMFAttributes * pSrc, IPropertyStore *pps, const GUID& attributeKey, REFPROPERTYKEY key) {
+    PROPVARIANT var;
+    PropVariantInit(&var);
+
+    HRESULT hr = S_OK;
+
+    hr = pSrc->GetItem(attributeKey, &var);
+    if (SUCCEEDED(hr))
+    {
+        hr = pps->SetValue(key, var);
+    }
+
+    PropVariantClear(&var);
+    return hr;
+}
+
+HRESULT IPropertyStore_SetValue(IPropertyStore *pps, REFPROPERTYKEY pkey, PCWSTR pszValue)
+{
+    PROPVARIANT var;
+    HRESULT hr = InitPropVariantFromString(pszValue, &var);
+    if (SUCCEEDED(hr)) {
+        hr = pps->SetValue(pkey, var);
+        PropVariantClear(&var);
+    }
+    return hr;
+}
+
+HRESULT IPropertyStore_SetValue(IPropertyStore *pps, REFPROPERTYKEY pkey, UINT32 pszValue)
+{
+    PROPVARIANT var;
+    HRESULT hr = InitPropVariantFromUInt32(pszValue, &var);
+    if (SUCCEEDED(hr)) {
+        hr = pps->SetValue(pkey, var);
+        PropVariantClear(&var);
+    }
+    return hr;
+}
+
 IMFTransform* FindEncoderTransform(GUID out_video_format) {
     UINT32 count = 0;
     IMFActivate **ppActivate = NULL;
-
+    DetectSubtype(out_video_format);
 
     MFT_REGISTER_TYPE_INFO info = { 0 };
     info.guidMajorType = MFMediaType_Video;

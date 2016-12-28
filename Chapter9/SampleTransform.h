@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include <Mfidl.h>
+#include <mfapi.h>
 #include "mftransform.h"
 #include <MMSystem.h>
 class SampleTransform :
@@ -75,7 +76,7 @@ private:
     volatile long m_cRef;                             // ref count
     CComAutoCriticalSection m_critSec;       // critical section for the MFT
     MFTIME timeOffset = 0;    
-    bool firstSample = 0;
+    int sampleCount = 0;
     CComPtr<IMFSample>  m_pSample;           // Input sample.
     CComPtr<IMFMediaType> m_pInputType;      // Input media type.
     CComPtr<IMFMediaType> m_pOutputType;     // Output media type.

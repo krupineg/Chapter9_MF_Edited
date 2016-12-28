@@ -115,7 +115,7 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/SAFESEH  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>mf.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;shlwapi.lib;D3D9.lib;D3dx9.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mf.lib;mfplat.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;shlwapi.lib;D3D9.lib;D3dx9.lib;Vfw32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -219,6 +219,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AviFileWriter.cpp" />
+    <ClCompile Include="AviSink.cpp" />
+    <ClCompile Include="AviStream.cpp" />
     <ClCompile Include="ByteStreamWriteData.cpp" />
     <ClCompile Include="helpers.cpp" />
     <ClCompile Include="HttpOutputStreamActivate.cpp" />
@@ -231,14 +234,20 @@
     <ClCompile Include="winmain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AbstractVideoSink.h" />
     <ClInclude Include="AsyncCB.h" />
+    <ClInclude Include="AviFileWriter.h" />
+    <ClInclude Include="AviSink.h" />
+    <ClInclude Include="AviStream.h" />
     <ClInclude Include="ByteStreamWriteData.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="FileVideoSink.h" />
     <ClInclude Include="helpers.h" />
     <ClInclude Include="HttpOutputStreamActivate.h" />
     <ClInclude Include="HttpOutputByteStream.h" />
     <ClInclude Include="LinkList.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="RendererVideoSink.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SampleGrabberCB.h" />
     <ClInclude Include="SampleTransform.h" />

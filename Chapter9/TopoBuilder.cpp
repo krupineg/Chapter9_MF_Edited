@@ -47,7 +47,7 @@ HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_typ
         THROW_ON_FAIL(hr);
         DetectSubtype(minorType);
         if (minorType == neededInputType) {
-            hr = copyTypeParameters(in_media_type, inputType);
+            hr = CopyVideoType(in_media_type, inputType);
             THROW_ON_FAIL(hr);
             hr = transform->SetInputType(0, inputType, 0);
             THROW_ON_FAIL(hr);
@@ -72,7 +72,7 @@ HRESULT negotiateOutputType(IMFTransform * transform, GUID out_video_format, IMF
         THROW_ON_FAIL(hr);
         
         if (minorType == out_video_format) {
-            hr = copyTypeParameters(in_media_type, outputType);
+            hr = CopyVideoType(in_media_type, outputType);
            
             THROW_ON_FAIL(hr);
             THROW_ON_FAIL(hr);
@@ -142,7 +142,7 @@ HRESULT AddTransformNode(
     return hr;
 }
 
-IMFTopologyNode* AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * pStreamDescriptor, IMFTopologyNode * output_node)
+IMFTopologyNode* CTopoBuilder::AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * pStreamDescriptor, IMFTopologyNode * output_node)
 {
     CComPtr<IMFTopologyNode> transformNode;
     CComPtr<IMFTopologyNode> colorConverterNode;
@@ -157,9 +157,8 @@ IMFTopologyNode* AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * 
     if (minorType != MFVideoFormat_H264) {
         DetectSubtype(minorType);
         CComPtr<IMFTransform> color;
-        CComPtr<IMFTransform> transform;
         color = CreateColorConverterMFT();
-        transform = CreateVideoEncoderMFT(mediaType, MFVideoFormat_H264);     
+       
         
         hr = AddTransformNode(topology, transform, sampleTransformNode, &transformNode);
         THROW_ON_FAIL(hr);
@@ -295,12 +294,42 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
     THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
     THROW_ON_FAIL(hr);
-    hr = copyTypeParameters(in_mf_media_type, out_mf_media_type);
+    hr = CopyVideoType(in_mf_media_type, out_mf_media_type);
+    if (transform != NULL) {
+        CComPtr<IMFMediaType> transformMediaType;
+        hr = transform->GetOutputCurrentType(0, &transformMediaType);
+        THROW_ON_FAIL(hr);
+        UINT32 pcbBlobSize = { 0 };
+        hr = transformMediaType->GetBlobSize(MF_MT_MPEG_SEQUENCE_HEADER, &pcbBlobSize);
+        THROW_ON_FAIL(hr);
+        UINT8* g_blob = (UINT8*)malloc(pcbBlobSize);
+        hr = transformMediaType->GetBlob(MF_MT_MPEG_SEQUENCE_HEADER, g_blob, pcbBlobSize, NULL);
+        THROW_ON_FAIL(hr);
+        hr = out_mf_media_type->SetBlob(MF_MT_MPEG_SEQUENCE_HEADER, g_blob, pcbBlobSize);
+        THROW_ON_FAIL(hr);
+    }
+    //hr = out_mf_media_type->SetUINT32(MF_MT_MPEG4_CURRENT_SAMPLE_ENTRY, 0);
+    THROW_ON_FAIL(hr);
+ //   hr = out_mf_media_type->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, 16);
+    THROW_ON_FAIL(hr);
+ //   hr = out_mf_media_type->SetUINT32(MF_MT_MPEG2_PROFILE, 77);
+    THROW_ON_FAIL(hr);
+ //   hr = out_mf_media_type->SetUINT32(MF_MT_SAMPLE_SIZE, 1);
+    THROW_ON_FAIL(hr);
+   // hr = out_mf_media_type->SetGUID(MF_MT_AM_FORMAT_TYPE, MFVideoFormat_MPEG2);
+    THROW_ON_FAIL(hr);
+   // hr = out_mf_media_type->SetUINT32(MF_NALU_LENGTH_SET, 0);
+    THROW_ON_FAIL(hr);
+    hr = out_mf_media_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+    THROW_ON_FAIL(hr);
+    hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
     THROW_ON_FAIL(hr);
     hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
-       
+    THROW_ON_FAIL(hr);
     THROW_ON_FAIL(hr);
     
+
+
     // Stream Sink を取得する
     return hr;
 }
@@ -420,6 +449,9 @@ HRESULT CTopoBuilder::AfterSessionClose(IMFMediaSession * m_pSession) {
         m_pSource.Release();
     }
     if (m_Sink) {
+        CComPtr<IMFStreamSink> stream_sink;
+        hr = m_Sink->GetStreamSinkByIndex(0, &stream_sink);
+
         hr = m_Sink->Shutdown();
         THROW_ON_FAIL(hr);
         m_Sink.Release();
@@ -459,6 +491,8 @@ HRESULT CTopoBuilder::CreateTopology(void)
     hr = pPresDescriptor->GetStreamDescriptorCount(&nSourceStreams);
     THROW_ON_FAIL(hr);
 
+    //hr = pPresDescriptor->SetUINT32(MF_NALU_LENGTH_SET, 0);
+    //THROW_ON_FAIL(hr);
     // For each stream, create source and sink nodes and add them to the topology.
     for (DWORD x = 0; x < nSourceStreams; x++)
     {
@@ -658,7 +692,8 @@ HRESULT CTopoBuilder::CreateOutputNode(
     if(toFile && 
         majorType == MFMediaType_Video)
     {
-        THROW_ON_FAIL(hr);
+        transform = CreateVideoEncoderMFT(in_media_type, MEDIASUBTYPE_H264);
+        //THROW_ON_FAIL(hr);
         hr = CreateFileSink(L"C:\\Users\\Public\\Encoded2.mp4", in_media_type);
         THROW_ON_FAIL(hr);
         CComPtr<IMFTopologyNode> pOldOutput = pOutputNode;

@@ -1,8 +1,9 @@
 #pragma once
 #include "SampleTransform.h"
+#include <mfapi.h>
 SampleTransform::SampleTransform(void) :
     m_cRef(1),
-    firstSample(true),
+    sampleCount(0),
     prevAfter(0)
 {
 }
@@ -231,8 +232,8 @@ HRESULT SampleTransform::GetOutputStreamInfo(
         pStreamInfo->dwFlags =
             MFT_OUTPUT_STREAM_WHOLE_SAMPLES |
             MFT_OUTPUT_STREAM_SINGLE_SAMPLE_PER_BUFFER |
-            MFT_OUTPUT_STREAM_FIXED_SAMPLE_SIZE |
-            MFT_OUTPUT_STREAM_PROVIDES_SAMPLES;
+            MFT_OUTPUT_STREAM_FIXED_SAMPLE_SIZE | MFT_OUTPUT_STREAM_CAN_PROVIDE_SAMPLES |
+            MFT_OUTPUT_STREAM_PROVIDES_SAMPLES ;
 
         // the cbAlignment variable contains information about byte alignment of the sample 
         // buffers, if one is needed.  Zero indicates that no specific alignment is needed.
@@ -692,6 +693,7 @@ HRESULT SampleTransform::ProcessEvent(
     DWORD              dwInputStreamID,
     IMFMediaEvent*     pEvent)
 {
+    
     return E_NOTIMPL;
 }
 
@@ -796,59 +798,97 @@ HRESULT SampleTransform::ProcessOutput(
 {
     HRESULT hr = S_OK;
 
-    do
+    // lock the MFT
+    CComCritSecLock<CComAutoCriticalSection> lock(m_critSec);
+
+
+    // This MFT accepts only a single output sample at a time, and does
+    // not accept any flags.
+    if (cOutputBufferCount != 1 || dwFlags != 0)
     {
-        // lock the MFT
-        CComCritSecLock<CComAutoCriticalSection> lock(m_critSec);
+        return E_INVALIDARG;
+    }
 
-        BREAK_ON_NULL(pOutputSampleBuffer, E_POINTER);
-        BREAK_ON_NULL(pdwStatus, E_POINTER);
+    // If we don't have an input sample, we need some input before
+    // we can generate any output - return a flag indicating that more 
+    // input is needed.
+    if (m_pSample == NULL) {
+        return MF_E_TRANSFORM_NEED_MORE_INPUT;
+    }
 
-        // This MFT accepts only a single output sample at a time, and does
-        // not accept any flags.
-        if (cOutputBufferCount != 1 || dwFlags != 0)
-        {
-            hr = E_INVALIDARG;
-            break;
-        }
+    CComPtr<IMFSample> pSample = m_pSample.Detach();
 
-        // If we don't have an input sample, we need some input before
-        // we can generate any output - return a flag indicating that more 
-        // input is needed.
-        BREAK_ON_NULL(m_pSample, MF_E_TRANSFORM_NEED_MORE_INPUT);
+    MFTIME currentSampleTime, duration; 
+    hr = pSample->GetSampleTime(&currentSampleTime);
+    THROW_ON_FAIL(hr);
+    hr = pSample->GetSampleDuration(&duration);
+    THROW_ON_FAIL(hr);
+    if (sampleCount == 0) {
+        timeOffset = currentSampleTime;
+    }
+    MFTIME newValue = currentSampleTime - timeOffset;
+    DebugLongLong(L"count: ", sampleCount);
+    DebugLongLong(L"raw: ", currentSampleTime);
+    DebugLongLong(L"new value: ", newValue);
+    pSample->SetSampleTime(currentSampleTime);
+    /*   CComPtr<IMFSample> reConstructedVideoSample;
+    CComPtr<IMFMediaBuffer> srcBuf = NULL;
+    CComPtr<IMFMediaBuffer> reConstructedBuffer = NULL;
+    DWORD srcBufLength;
+    byte *srcByteBuffer;
+    DWORD srcBuffCurrLen = 0;
+    DWORD srcBuffMaxLen = 0;
+    hr = pSample->ConvertToContiguousBuffer(&srcBuf);
+    THROW_ON_FAIL(hr);
+    hr = srcBuf->GetCurrentLength(&srcBufLength);
+    THROW_ON_FAIL(hr);
+    hr = srcBuf->Lock(&srcByteBuffer, &srcBuffMaxLen, &srcBuffCurrLen);
+    THROW_ON_FAIL(hr);
+    //// Now re-constuct.
+    MFCreateSample(&reConstructedVideoSample);
+    hr = MFCreateMemoryBuffer(srcBufLength, &reConstructedBuffer);
+    THROW_ON_FAIL(hr);
+    hr = reConstructedVideoSample->AddBuffer(reConstructedBuffer);
+    THROW_ON_FAIL(hr);      
+    byte *reconByteBuffer;
+    DWORD reconBuffCurrLen = 0;
+    DWORD reconBuffMaxLen = 0;
+    hr = reConstructedBuffer->Lock(&reconByteBuffer, &reconBuffMaxLen, &reconBuffCurrLen);
+    THROW_ON_FAIL(hr);
+    memcpy(reconByteBuffer, srcByteBuffer, srcBuffCurrLen);
+    hr = reConstructedBuffer->Unlock();
+    THROW_ON_FAIL(hr);
+    hr = reConstructedBuffer->SetCurrentLength(srcBuffCurrLen);
+    THROW_ON_FAIL(hr);
+    hr = srcBuf->Unlock();
+    THROW_ON_FAIL(hr);
+    hr = pSample->CopyAllItems(reConstructedVideoSample);
+    THROW_ON_FAIL(hr);
+    hr = reConstructedVideoSample->SetSampleTime(newValue);
+    THROW_ON_FAIL(hr);
+    hr = reConstructedVideoSample->SetSampleDuration(duration);
+    THROW_ON_FAIL(hr);
+    //hr = reConstructedVideoSample->SetUINT64(MFSampleExtension_DecodeTimestamp, newValue);
+    THROW_ON_FAIL(hr);
+    //hr = reConstructedVideoSample->SetUINT32(MFSampleExtension_Discontinuity, 1);
+    THROW_ON_FAIL(hr); 
+    //hr = reConstructedVideoSample->SetUINT32(MFSampleExtension_CleanPoint, 1);
+    THROW_ON_FAIL(hr);
+    //hr = reConstructedVideoSample->SetUINT32(MFSampleExtension_Interlaced, 1);
+    THROW_ON_FAIL(hr);
+   // hr = reConstructedVideoSample->SetUINT32(MFSampleExtension_BottomFieldFirst, 1); 
+    THROW_ON_FAIL(hr);
+    //hr = reConstructedVideoSample->SetUINT32(MFSampleExtension_DeviceTimestamp, currentSampleTime);
+    THROW_ON_FAIL(hr);*/
+    sampleCount++; 
+    // Detach the output sample from the MFT and put the pointer for
+    // the processed sample into the output buffer
+    pOutputSampleBuffer[0].pSample = pSample;
 
-        MFTIME currentSampleTime, duration; 
-        hr = m_pSample->GetSampleTime(&currentSampleTime);
-        THROW_ON_FAIL(hr);
-    
-        hr = m_pSample->GetSampleDuration(&duration);
-        THROW_ON_FAIL(hr);
-
-        if (firstSample) {
-            firstSample = false;
-            timeOffset = currentSampleTime;
-        }
-       
-        MFTIME newtSampleTime = currentSampleTime - timeOffset;
-        if (prevAfter <= newtSampleTime) {
-
-            DebugLongLong(L"raw: ", currentSampleTime);
-            DebugLongLong(L"shifted: ", newtSampleTime);
-
-            //hr = m_pSample->SetSampleTime(newtSampleTime);
-            THROW_ON_FAIL(hr);
-
-            // Detach the output sample from the MFT and put the pointer for
-            // the processed sample into the output buffer
-            pOutputSampleBuffer[0].pSample = m_pSample.Detach();
-
-            // Set status flags for output
-            pOutputSampleBuffer[0].dwStatus = 0;
-            *pdwStatus = 0;
-        }
-        
-        prevAfter = newtSampleTime;
-    } while (false);
+    // Set status flags for output
+    pOutputSampleBuffer[0].dwStatus = 0;
+            
+    *pdwStatus = 0;
 
     return hr;
 }

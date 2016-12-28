@@ -39,7 +39,7 @@ class CTopoBuilder
         CComQIPtr<IMFMediaSource>               m_pSource;       // the MF source
         CComQIPtr<IMFVideoDisplayControl>       m_pVideoDisplay; // pointer to the mixer
         HWND                                    m_videoHwnd;     // the target window
-
+        CComPtr<IMFTransform> transform;
         CComPtr<IMFActivate> m_pNetworkSinkActivate;
         CComPtr<IMFMediaSink> m_Sink;
         DWORD m_nextNetworkSinkStreamIndex;
@@ -56,7 +56,7 @@ class CTopoBuilder
 			IMFTopologyNode* pRendererNode,
 			IMFTopologyNode** ppTeeNode);
         HRESULT CreateTopology(void);
-
+        IMFTopologyNode * AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * pStreamDescriptor, IMFTopologyNode * output_node);
         HRESULT AddBranchToPartialTopology(
             CComPtr<IMFPresentationDescriptor> pPresDescriptor, 
             DWORD iStream);

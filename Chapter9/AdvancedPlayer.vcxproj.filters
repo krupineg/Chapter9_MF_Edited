@@ -31,6 +31,15 @@
     <ClCompile Include="SampleGrabberCB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AviFileWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AviStream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AviSink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -70,6 +79,24 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="SampleGrabberCB.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="AviFileWriter.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="AviSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="AviStream.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractVideoSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererVideoSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileVideoSink.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
