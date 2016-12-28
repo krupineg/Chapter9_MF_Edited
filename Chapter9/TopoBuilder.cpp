@@ -449,9 +449,6 @@ HRESULT CTopoBuilder::AfterSessionClose(IMFMediaSession * m_pSession) {
         m_pSource.Release();
     }
     if (m_Sink) {
-        CComPtr<IMFStreamSink> stream_sink;
-        hr = m_Sink->GetStreamSinkByIndex(0, &stream_sink);
-
         hr = m_Sink->Shutdown();
         THROW_ON_FAIL(hr);
         m_Sink.Release();
@@ -491,8 +488,8 @@ HRESULT CTopoBuilder::CreateTopology(void)
     hr = pPresDescriptor->GetStreamDescriptorCount(&nSourceStreams);
     THROW_ON_FAIL(hr);
 
-    //hr = pPresDescriptor->SetUINT32(MF_NALU_LENGTH_SET, 0);
-    //THROW_ON_FAIL(hr);
+    hr = pPresDescriptor->SetUINT32(MF_NALU_LENGTH_SET, 0);
+    THROW_ON_FAIL(hr);
     // For each stream, create source and sink nodes and add them to the topology.
     for (DWORD x = 0; x < nSourceStreams; x++)
     {
