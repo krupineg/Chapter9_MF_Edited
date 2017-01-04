@@ -158,7 +158,8 @@ IMFTopologyNode* CTopoBuilder::AddEncoderIfNeed(IMFTopology * topology, IMFStrea
         DetectSubtype(minorType);
         CComPtr<IMFTransform> color;
         color = CreateColorConverterMFT();
-       
+        CComPtr<IMFTransform> transform;
+        transform = CreateVideoEncoderMFT(mediaType, MFVideoFormat_H264);
         
         hr = AddTransformNode(topology, transform, sampleTransformNode, &transformNode);
         THROW_ON_FAIL(hr);
@@ -237,7 +238,7 @@ HRESULT CTopoBuilder::RenderCamera(HWND videoHwnd, bool addNetwork)
 
     return hr;
 }
-//
+//a
 // Create a network sink that will listen for requests on the specified port.
 //
 HRESULT CTopoBuilder::CreateNetworkSink(DWORD requestPort)
@@ -689,8 +690,10 @@ HRESULT CTopoBuilder::CreateOutputNode(
     if(toFile && 
         majorType == MFMediaType_Video)
     {
-        transform = CreateVideoEncoderMFT(in_media_type, MEDIASUBTYPE_H264);
-        //THROW_ON_FAIL(hr);
+        if (GetVideoSubtype(in_media_type) != MEDIASUBTYPE_H264) {
+            transform = CreateVideoEncoderMFT(in_media_type, MEDIASUBTYPE_H264);
+            THROW_ON_NULL(transform);
+        }
         hr = CreateFileSink(L"C:\\Users\\Public\\Encoded2.mp4", in_media_type);
         THROW_ON_FAIL(hr);
         CComPtr<IMFTopologyNode> pOldOutput = pOutputNode;

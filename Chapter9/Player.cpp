@@ -127,17 +127,26 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
         }
 
         if (eventType == MESessionTopologySet) {
-            OutputDebugStringW(L"Topology resolved and set on the media session.\n");
+            DebugInfo(L"Topology resolved and set on the media session.\n");
         }
         if (eventType == MESessionStopped) {
-            OutputDebugStringW(L"Media session is stopped.\n");
+            DebugInfo(L"Media session is stopped.\n");
         }
         if (eventType == MESessionStarted) {
-            OutputDebugStringW(L"Media session is started.\n");
+            DebugInfo(L"Media session is started.\n");
         }
-
-       
-
+        if (eventType == MEEndOfPresentation) {
+            DebugInfo(L"End of presentation.\n");
+        }
+        if (eventType == MEEndOfStream) {
+            DebugInfo(L"End of stream.\n");
+        }
+        if (eventType == MEStreamSinkMarker) {
+            DebugInfo(L"Sink marker.\n");
+        }
+        if (eventType == MESessionEnded) {
+            DebugInfo(L"Session ended.\n");
+        }
         // Switch on the event type. Update the internal state of the CPlayer as needed.
         if(eventType == MESessionTopologyStatus)
         {
@@ -601,7 +610,6 @@ HRESULT CPlayer::CloseSession(void)
     if (m_pSession != NULL)
     {
         m_state = PlayerState_Closing;
-
         hr = m_pSession->Close();
         if (SUCCEEDED(hr))
         {

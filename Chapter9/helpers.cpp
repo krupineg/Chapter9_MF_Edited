@@ -122,8 +122,7 @@ HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_
     UINT32 denominator = 0;
     UINT32 width, height, bitrate;
     HRESULT hr = S_OK;
-   
-    THROW_ON_FAIL(hr);   
+  
    
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AVG_BITRATE);
     THROW_ON_FAIL(hr);
@@ -148,8 +147,6 @@ HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO);*/
    THROW_ON_FAIL(hr);
 
-    hr = out_mf_media_type->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);
-    THROW_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_INTERLACE_MODE);
     THROW_ON_FAIL(hr);
     return hr;
