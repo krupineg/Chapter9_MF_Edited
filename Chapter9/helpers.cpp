@@ -1,42 +1,21 @@
 #pragma once
 #include "helpers.h"
-
+#include <array>
 inline bool operator< (const GUID &firstGUID, const GUID &secondGUID) {
     return (memcmp(&firstGUID, &secondGUID, sizeof(GUID)) < 0 ? true : false);
 }
 
-std::wstringstream& operator<<(std::wstringstream& os, REFGUID guid) {
-
-    os << std::uppercase;
-    os.width(8);
-    os << std::hex << guid.Data1 << '-';
-
-    os.width(4);
-    os << std::hex << guid.Data2 << '-';
-
-    os.width(4);
-    os << std::hex << guid.Data3 << '-';
-
-    os.width(2);
-    os << std::hex
-        << static_cast<short>(guid.Data4[0])
-        << static_cast<short>(guid.Data4[1])
-        << '-'
-        << static_cast<short>(guid.Data4[2])
-        << static_cast<short>(guid.Data4[3])
-        << static_cast<short>(guid.Data4[4])
-        << static_cast<short>(guid.Data4[5])
-        << static_cast<short>(guid.Data4[6])
-        << static_cast<short>(guid.Data4[7]);
-    os << std::nouppercase;
-    return os;
+std:: wstring guidToString(GUID guid) {
+    std::array<wchar_t, 40> output;
+    wnsprintf(output.data(), output.size(), L"{%08X-%04hX-%04hX-%02X%02X-%02X%02X%02X%02X%02X%02X}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    return std::wstring(output.data());
 }
 
 void DebugGuid(std::wstring pref, GUID guid) {
     std::wstring strng;
     std::wstringstream strstream;
-    strstream << pref << L": ";
-    strstream << guid << L"\n";
+    strstream << pref;
+    //strstream << guidToString(guid) << L"\n";
     strng = strstream.str();
     OutputDebugStringW(strng.c_str());
 }
@@ -57,82 +36,81 @@ void DebugInfo(std::wstring info) {
     OutputDebugStringW(strng.c_str());
 }
 
-void DetectSubtype(GUID guid) {
+const std::map<GUID, std::wstring> video_type_map = {
+    { MFVideoFormat_RGB8, L"MFVideoFormat_RGB8" },
+    { MFVideoFormat_RGB555, L"MFVideoFormat_RGB555" },
+    { MFVideoFormat_RGB565, L"MFVideoFormat_RGB565" },
+    { MFVideoFormat_RGB24, L"MFVideoFormat_RGB24" },
+    { MFVideoFormat_RGB32, L"MFVideoFormat_RGB32" },
+    { MFVideoFormat_ARGB32, L"MFVideoFormat_ARGB32" },
+    { MFVideoFormat_AI44,  L"MFVideoFormat_AI44" },
+    { MFVideoFormat_AYUV,  L"MFVideoFormat_AYUV" },
+    { MFVideoFormat_I420,  L"MFVideoFormat_I420" },
+    { MFVideoFormat_IYUV,  L"MFVideoFormat_IYUV" },
+    { MFVideoFormat_NV11,  L"MFVideoFormat_NV11" },
+    { MFVideoFormat_NV12,  L"MFVideoFormat_NV12" },
+    { MFVideoFormat_UYVY,  L"MFVideoFormat_UYVY" },
+    { MFVideoFormat_Y41P,  L"MFVideoFormat_Y41P" },
+    { MFVideoFormat_Y41T,  L"MFVideoFormat_Y41T" },
+    { MFVideoFormat_Y42T,  L"MFVideoFormat_Y42T" },
+    { MFVideoFormat_YUY2,  L"MFVideoFormat_YUY2" },
+    { MFVideoFormat_YVU9,  L"MFVideoFormat_YVU9" },
+    { MFVideoFormat_YV12,  L"MFVideoFormat_YV12" },
+    { MFVideoFormat_YVYU,  L"MFVideoFormat_YVYU" },
+    { MFVideoFormat_P010,  L"MFVideoFormat_P010" },
+    { MFVideoFormat_P016,  L"MFVideoFormat_P016" },
+    { MFVideoFormat_P210,  L"MFVideoFormat_P210" },
+    { MFVideoFormat_P216,  L"MFVideoFormat_P216" },
+    { MFVideoFormat_v210,  L"MFVideoFormat_v210" },
+    { MFVideoFormat_v216,  L"MFVideoFormat_v216" },
+    { MFVideoFormat_v410,  L"MFVideoFormat_v410" },
+    { MFVideoFormat_Y210,  L"MFVideoFormat_Y210" },
+    { MFVideoFormat_Y216,  L"MFVideoFormat_Y216" },
+    { MFVideoFormat_Y410,  L"MFVideoFormat_Y410" },
+    { MFVideoFormat_Y416,  L"MFVideoFormat_Y416" },
+    { MFVideoFormat_DV25,  L"MFVideoFormat_DV25" },
+    { MFVideoFormat_DV50,  L"MFVideoFormat_DV50" },
+    { MFVideoFormat_DVC,   L"MFVideoFormat_DVC" },
+    { MFVideoFormat_H264,  L"MFVideoFormat_H264" },
+    { MFVideoFormat_H263, L"MFVideoFormat_H263" },
+    { MFVideoFormat_DVSL, L"MFVideoFormat_DVSL" },
+    { MFVideoFormat_H264_ES, L"MFVideoFormat_H264_ES" },
+    { MFVideoFormat_MJPG, L"MFVideoFormat_MJPG" },
+    { MFVideoFormat_WMV1, L"MFVideoFormat_WMV1" },
+    { MFVideoFormat_WMV2, L"MFVideoFormat_WMV2" },
+    { MFVideoFormat_WMV3, L"MFVideoFormat_WMV3" },
+};
+const std::map<GUID, std::wstring> major_type_map = {
+    { MFMediaType_Audio, L"MFMediaType_Audio" },
+    { MFMediaType_Binary, L"MFMediaType_Binary" },
+    { MFMediaType_FileTransfer, L"MFMediaType_FileTransfer" },
+    { MFMediaType_HTML, L"MFMediaType_HTML" },
+    { MFMediaType_Image, L"MFMediaType_Image" },
+    { MFMediaType_Protected, L"MFMediaType_Protected" },
+    { MFMediaType_SAMI,  L"MFMediaType_SAMI" },
+    { MFMediaType_Script,  L"MFMediaType_Script" },
+    { MFMediaType_Stream,  L"MFMediaType_Stream" },
+    { MFMediaType_Video,  L"MFMediaType_Video" }
+};
+std::wstring DetectSubtype(GUID guid) {
     std::wstring  str;
-    std::map<GUID, std::wstring> my_map = {
-        { MFVideoFormat_RGB8, L"MFVideoFormat_RGB8" },
-        { MFVideoFormat_RGB555, L"MFVideoFormat_RGB555" },
-        { MFVideoFormat_RGB565, L"MFVideoFormat_RGB565" },
-        { MFVideoFormat_RGB24, L"MFVideoFormat_RGB24" },
-        { MFVideoFormat_RGB32, L"MFVideoFormat_RGB32" },
-        { MFVideoFormat_ARGB32, L"MFVideoFormat_ARGB32" },
-        { MFVideoFormat_AI44,  L"MFVideoFormat_AI44" },
-        { MFVideoFormat_AYUV,  L"MFVideoFormat_AYUV" },
-        { MFVideoFormat_I420,  L"MFVideoFormat_I420" },
-        { MFVideoFormat_IYUV,  L"MFVideoFormat_IYUV" },
-        { MFVideoFormat_NV11,  L"MFVideoFormat_NV11" },
-        { MFVideoFormat_NV12,  L"MFVideoFormat_NV12" },
-        { MFVideoFormat_UYVY,  L"MFVideoFormat_UYVY" },
-        { MFVideoFormat_Y41P,  L"MFVideoFormat_Y41P" },
-        { MFVideoFormat_Y41T,  L"MFVideoFormat_Y41T" },
-        { MFVideoFormat_Y42T,  L"MFVideoFormat_Y42T" },
-        { MFVideoFormat_YUY2,  L"MFVideoFormat_YUY2" },
-        { MFVideoFormat_YVU9,  L"MFVideoFormat_YVU9" },
-        { MFVideoFormat_YV12,  L"MFVideoFormat_YV12" },
-        { MFVideoFormat_YVYU,  L"MFVideoFormat_YVYU" },
-        { MFVideoFormat_P010,  L"MFVideoFormat_P010" },
-        { MFVideoFormat_P016,  L"MFVideoFormat_P016" },
-        { MFVideoFormat_P210,  L"MFVideoFormat_P210" },
-        { MFVideoFormat_P216,  L"MFVideoFormat_P216" },
-        { MFVideoFormat_v210,  L"MFVideoFormat_v210" },
-        { MFVideoFormat_v216,  L"MFVideoFormat_v216" },
-        { MFVideoFormat_v410,  L"MFVideoFormat_v410" },
-        { MFVideoFormat_Y210,  L"MFVideoFormat_Y210" },
-        { MFVideoFormat_Y216,  L"MFVideoFormat_Y216" },
-        { MFVideoFormat_Y410,  L"MFVideoFormat_Y410" },
-        { MFVideoFormat_Y416,  L"MFVideoFormat_Y416" },
-        { MFVideoFormat_DV25,  L"MFVideoFormat_DV25" },
-        { MFVideoFormat_DV50,  L"MFVideoFormat_DV50" },
-        { MFVideoFormat_DVC,   L"MFVideoFormat_DVC" },
-        { MFVideoFormat_H264,  L"MFVideoFormat_H264" },
-        { MFVideoFormat_H263, L"MFVideoFormat_H263" },
-        { MFVideoFormat_DVSL, L"MFVideoFormat_DVSL" },
-        { MFVideoFormat_H264_ES, L"MFVideoFormat_H264_ES" },
-        { MFVideoFormat_MJPG, L"MFVideoFormat_MJPG" },
-        { MFVideoFormat_WMV1, L"MFVideoFormat_WMV1" },
-        { MFVideoFormat_WMV2, L"MFVideoFormat_WMV2" },
-        { MFVideoFormat_WMV3, L"MFVideoFormat_WMV3" },
-    };
-    if (my_map.count(guid) != 0) {
-        str = my_map.find(guid)->second;
-        DebugInfo(str.c_str());
-        
+    if (video_type_map.count(guid) != 0) {
+        str = video_type_map.find(guid)->second;
+        return str;
     }
     else {
-        DebugGuid(L"undefined subtype: ", guid);
+        return L"undefined subtype " + guidToString(guid);
     }
 }
 
 std::wstring DetectMajorType(GUID guid) {
     std::wstring  str;
-    std::map<GUID, std::wstring> my_map = {
-        { MFMediaType_Audio, L"MFMediaType_Audio" },
-        { MFMediaType_Binary, L"MFMediaType_Binary" },
-        { MFMediaType_FileTransfer, L"MFMediaType_FileTransfer" },
-        { MFMediaType_HTML, L"MFMediaType_HTML" },
-        { MFMediaType_Image, L"MFMediaType_Image" },
-        { MFMediaType_Protected, L"MFMediaType_Protected" },
-        { MFMediaType_SAMI,  L"MFMediaType_SAMI" },
-        { MFMediaType_Script,  L"MFMediaType_Script" },
-        { MFMediaType_Stream,  L"MFMediaType_Stream" },
-        { MFMediaType_Video,  L"MFMediaType_Video" }
-    };
-    if (my_map.count(guid) != 0) {
-        str = my_map.find(guid)->second;
+    if (major_type_map.count(guid) != 0) {
+        str = major_type_map.find(guid)->second;
         return str.c_str();
     }
     else {
-        return L"UNDEFINED";
+        return L"undefined major type " + guidToString(guid);
     }
     
 }
@@ -148,7 +126,7 @@ IMFMediaType* GetMediaType(IMFStreamDescriptor * pStreamDescriptor) {
     return mediaType;
 }
 
-GUID GetVideoSubtype(IMFMediaType * mediaType) {
+GUID GetSubtype(IMFMediaType * mediaType) {
     GUID minorType;
     HRESULT hr = mediaType->GetGUID(MF_MT_SUBTYPE, &minorType);
     THROW_ON_FAIL(hr);
@@ -196,25 +174,19 @@ HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_
         out_mf_media_type->SetUINT32(MF_MT_AVG_BITRATE, bitrate);
     }
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_SIZE, &width, &height);
-    THROW_ON_FAIL(hr);
+    DEBUG_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_RATE, &frameRate, &frameRateDenominator);
-    THROW_ON_FAIL(hr);
+    DEBUG_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_PIXEL_ASPECT_RATIO, &aspectRatio, &denominator);
-    THROW_ON_FAIL(hr);
+    DEBUG_ON_FAIL(hr);
     hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_SIZE, width, height);
-    THROW_ON_FAIL(hr);
+    DEBUG_ON_FAIL(hr);
     hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_FRAME_RATE, frameRate, frameRateDenominator);
-    THROW_ON_FAIL(hr);
+    DEBUG_ON_FAIL(hr);
     hr = MFSetAttributeRatio(out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO, aspectRatio, denominator);
-    THROW_ON_FAIL(hr);
-    /* hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_SIZE);
-    THROW_ON_FAIL(hr);
-    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_RATE);
-    THROW_ON_FAIL(hr);
-    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_PIXEL_ASPECT_RATIO);
-    THROW_ON_FAIL(hr);*/
+    DEBUG_ON_FAIL(hr);
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_INTERLACE_MODE);
-    THROW_ON_FAIL(hr);
+    DEBUG_ON_FAIL(hr);
     return hr;
 }
 
@@ -256,14 +228,14 @@ HRESULT IPropertyStore_SetValue(IPropertyStore *pps, REFPROPERTYKEY pkey, UINT32
     return hr;
 }
 
-IMFTransform* FindEncoderTransform(GUID out_video_format) {
+IMFTransform* FindEncoderTransform(GUID major, GUID minor) {
     UINT32 count = 0;
     IMFActivate **ppActivate = NULL;
-    DetectSubtype(out_video_format);
+    DebugInfo(L"find encoder to " + DetectSubtype(minor));
 
     MFT_REGISTER_TYPE_INFO info = { 0 };
-    info.guidMajorType = MFMediaType_Video;
-    info.guidSubtype = out_video_format;
+    info.guidMajorType = major;
+    info.guidSubtype = minor;
 
     MFTEnumEx(
         MFT_CATEGORY_VIDEO_ENCODER,
@@ -336,7 +308,7 @@ HRESULT HandleNodeObject(IMFTopologyNode * node) {
                 DebugInfo(L"input type: ");
                 DebugInfo(DetectMajorType(GetMajorType(inputType)));
                 DebugInfo(L" ");
-                DetectSubtype(GetVideoSubtype(inputType));
+                DebugInfo(DetectSubtype(GetSubtype(inputType)));
                 DebugInfo(L"; ");
             }
             CComPtr<IMFMediaType> outputType;
@@ -345,7 +317,7 @@ HRESULT HandleNodeObject(IMFTopologyNode * node) {
                 DebugInfo(L"output type: ");
                 DebugInfo(DetectMajorType(GetMajorType(outputType)));
                 DebugInfo(L" ");
-                DetectSubtype(GetVideoSubtype(outputType));                
+                DebugInfo(DetectSubtype(GetSubtype(outputType)));
             }
             
         }
@@ -360,7 +332,7 @@ HRESULT HandleNodeObject(IMFTopologyNode * node) {
             if (SUCCEEDED(hr)) {
                 DebugInfo(L"input type: ");
                 DebugInfo(DetectMajorType(GetMajorType(inputType)));
-                DetectSubtype(GetVideoSubtype(inputType));
+                DebugInfo(DetectSubtype(GetSubtype(inputType)));
                 
             }
         }

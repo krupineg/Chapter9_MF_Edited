@@ -12,6 +12,7 @@
 #include <Vfw.h>
 #include <hash_map>
 #include <initguid.h>
+#include <comdef.h>
 DEFINE_GUID(MF_MT_BITCOUNT, 0xc496f370, 0x2f8b, 0x4f51, 0xae, 0x46, 0x9c, 0xfc, 0x1b, 0xc8, 0x2a, 0x47);
 using namespace std;
 using namespace ATL;
@@ -20,5 +21,6 @@ using namespace ATL;
 #define BREAK_ON_NULL(value, newHr)     if(value == NULL) { hr = newHr; break; }
 
 #define THROW_ON_FAIL(value)     if(FAILED(value)) { throw; }
+#define DEBUG_ON_FAIL(value)     if(FAILED(value)) {  _com_error err(value); LPCTSTR errMsg = err.ErrorMessage(); DebugInfo(L"\n================\nERROR:\n"); DebugInfo(errMsg); DebugInfo(L"================\n");}
 #define THROW_ON_NULL(value)     if(value == NULL) { throw; }
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }

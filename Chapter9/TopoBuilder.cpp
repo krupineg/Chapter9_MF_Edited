@@ -30,8 +30,8 @@ IMFTransform* CreateColorConverterMFT()
 }
 
 HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_type) {
-    GUID neededInputType = GetVideoSubtype(in_media_type);
-    DetectSubtype(neededInputType);
+    GUID neededInputType = GetSubtype(in_media_type);
+    DebugInfo(DetectSubtype(neededInputType));
     int i = 0;
     IMFMediaType* inputType = NULL;
     HRESULT hr = S_OK;
@@ -47,7 +47,7 @@ HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_typ
         GUID minorType;
         hr = inputType->GetGUID(MF_MT_SUBTYPE, &minorType);
         THROW_ON_FAIL(hr);
-        DetectSubtype(minorType);
+        DebugInfo(DetectSubtype(minorType));
         if (minorType == neededInputType) {
             hr = CopyVideoType(in_media_type, inputType);
             THROW_ON_FAIL(hr);
@@ -64,11 +64,11 @@ HRESULT negotiateOutputType(IMFTransform * transform, GUID out_video_format, IMF
     HRESULT hr = S_OK;
     IMFMediaType* outputType = NULL;
     while (true) {
-        hr = transform->GetOutputAvailableType(0, i, &outputType);
-        i++;
+        hr = transform->GetOutputAvailableType(0, i, &outputType);        
         if (FAILED(hr)) {
             break;
         }
+        i++;
         GUID minorType;      
        
         hr = outputType->GetGUID(MF_MT_SUBTYPE, &minorType);
@@ -85,9 +85,9 @@ HRESULT negotiateOutputType(IMFTransform * transform, GUID out_video_format, IMF
     return hr;
 }
 
-IMFTransform* CreateVideoEncoderMFT(IMFMediaType * in_media_type, GUID out_video_format)
+IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, GUID out_type, GUID out_subtype)
 {
-    IMFTransform * pEncoder = FindEncoderTransform(out_video_format);
+    IMFTransform * pEncoder = FindEncoderTransform(out_type, out_subtype);
     HRESULT hr = S_OK;    
     DWORD inputstreamsCount;
     DWORD outputstreamsCount;
@@ -95,7 +95,7 @@ IMFTransform* CreateVideoEncoderMFT(IMFMediaType * in_media_type, GUID out_video
     hr = pEncoder->GetStreamCount(&inputstreamsCount, &outputstreamsCount);
     THROW_ON_FAIL(hr);
     HRESULT inputHr = negotiateInputType(pEncoder, in_media_type);
-    hr = negotiateOutputType(pEncoder, out_video_format, in_media_type);
+    hr = negotiateOutputType(pEncoder, out_subtype, in_media_type);
     DWORD mftStatus = 0;
     pEncoder->GetInputStatus(0, &mftStatus);
     if (MFT_INPUT_STATUS_ACCEPT_DATA != mftStatus) {
@@ -156,11 +156,11 @@ IMFTopologyNode* CTopoBuilder::AddEncoderIfNeed(IMFTopology * topology, IMFStrea
    // sampleTransform = CreateSampleTransform();
    // hr = AddTransformNode(topology, sampleTransform, output_node, &sampleTransformNode);
     THROW_ON_FAIL(hr);
-    GUID minorType = GetVideoSubtype(mediaType);
+    GUID minorType = GetSubtype(mediaType);
     if (transform != NULL) {
-        DetectSubtype(minorType);
+        DebugInfo(DetectSubtype(minorType));
         //CComPtr<IMFTransform> transform;
-       // transform = CreateVideoEncoderMFT(mediaType, MFVideoFormat_H264);
+       // transform = CreateEncoderMft(mediaType, MFVideoFormat_H264);
         
         hr = AddTransformNode(topology, transform, output_node, &transformNode);
         THROW_ON_FAIL(hr);
@@ -290,6 +290,10 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
             MF_ACCESSMODE_WRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE,
             filePath, &byte_stream);
         THROW_ON_FAIL(hr);
+        if (GetSubtype(in_mf_media_type) != MEDIASUBTYPE_H264) {
+            transform = CreateEncoderMft(in_mf_media_type, MFMediaType_Video, MEDIASUBTYPE_H264);
+            THROW_ON_NULL(transform);
+        }
     }
     CComPtr<IMFMediaType> out_mf_media_type;
    
@@ -697,10 +701,7 @@ HRESULT CTopoBuilder::CreateOutputNode(
     if(toFile
         && majorType == MFMediaType_Video)
     {
-        if (GetVideoSubtype(in_media_type) != MEDIASUBTYPE_H264) {
-            transform = CreateVideoEncoderMFT(in_media_type, MEDIASUBTYPE_H264);
-            THROW_ON_NULL(transform);
-        }
+       
         hr = CreateFileSink(L"C:\\Users\\Public\\Encoded2.mp4", in_media_type);
         THROW_ON_FAIL(hr);
         CComPtr<IMFTopologyNode> pOldOutput = pOutputNode;

@@ -11,7 +11,7 @@ public:
     }
 
     IMFTopologyNode * FileVideoSink::GetBranch(IMFTopology * topology) {
-        GUID neededSubtype = GetVideoSubtype(_out_type);
+        GUID neededSubtype = GetSubtype(_out_type);
         
         CComPtr<IMFTopologyNode> node = GetNode(topology);
         return node;
@@ -19,7 +19,7 @@ public:
 
 
 
-private:
+private: 
     PCWSTR _filePath;
     CComPtr<IMFTransform> transform;
     CComPtr<IMFMediaSink> m_Sink;
@@ -64,29 +64,16 @@ private:
         return S_OK;
     }
 
-    IMFTransform* CreateColorConverterMFT()
+    IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, GUID out_type, GUID out_subtype)
     {
-        //register color converter locally
-        THROW_ON_FAIL(MFTRegisterLocalByCLSID(__uuidof(CColorConvertDMO), MFT_CATEGORY_VIDEO_PROCESSOR, L"", MFT_ENUM_FLAG_SYNCMFT, 0, NULL, 0, NULL));
-
-        //create color converter
-        IMFTransform *pColorConverterMFT = NULL;
-        THROW_ON_FAIL(CoCreateInstance(__uuidof(CColorConvertDMO), NULL, CLSCTX_INPROC_SERVER, IID_IMFTransform, (void**)&pColorConverterMFT));
-
-        return pColorConverterMFT;
-    }
-
-
-    IMFTransform* CreateVideoEncoderMFT(IMFMediaType * in_media_type, GUID out_video_format)
-    {
-        IMFTransform * pEncoder = FindEncoderTransform(out_video_format);
+        IMFTransform * pEncoder = FindEncoderTransform(out_type, out_subtype);
         HRESULT hr = S_OK;
         DWORD inputstreamsCount;
         DWORD outputstreamsCount;
         hr = pEncoder->GetStreamCount(&inputstreamsCount, &outputstreamsCount);
         THROW_ON_FAIL(hr);
         HRESULT inputHr = negotiateInputType(pEncoder, in_media_type);
-        hr = negotiateOutputType(pEncoder, out_video_format, in_media_type);
+        hr = negotiateOutputType(pEncoder, out_subtype, in_media_type);
         DWORD mftStatus = 0;
         pEncoder->GetInputStatus(0, &mftStatus);
         if (MFT_INPUT_STATUS_ACCEPT_DATA != mftStatus) {
@@ -106,8 +93,8 @@ private:
         HRESULT hr = S_OK;
        
         GUID majorType = GetMajorType(inputMediaType);
-        GUID minorType = GetVideoSubtype(inputMediaType);
-        GUID neededVideoSubtype = GetVideoSubtype(outputMediaType);
+        GUID minorType = GetSubtype(inputMediaType);
+        GUID neededVideoSubtype = GetSubtype(outputMediaType);
         DetectSubtype(minorType);
         DetectSubtype(neededVideoSubtype);
         if (majorType == MFMediaType_Video && minorType != neededVideoSubtype) {
@@ -120,7 +107,7 @@ private:
             THROW_ON_FAIL(hr);
             hr = sampleTransformNode->SetUINT32(MF_TOPONODE_NOSHUTDOWN_ON_REMOVE, FALSE);
             THROW_ON_FAIL(hr)
-            transform = CreateVideoEncoderMFT(_in_type, neededVideoSubtype);
+            transform = CreateEncoderMft(_in_type, neededVideoSubtype);
             hr = AddTransformNode(topology, transform, sampleTransformNode, &transformNode);
             THROW_ON_FAIL(hr);
             hr = transformNode->SetUINT32(MF_TOPONODE_STREAMID, 0);

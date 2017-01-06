@@ -20,7 +20,7 @@ class SampleGrabberCB : public IMFSampleGrabberSinkCallback
         hr = inTypeCopy->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
         THROW_ON_FAIL(hr);
         
-        GUID subtype = GetVideoSubtype(pTypeIn);
+        GUID subtype = GetSubtype(pTypeIn);
         hr = inTypeCopy->SetGUID(MF_MT_SUBTYPE, subtype);
         THROW_ON_FAIL(hr);
         hr = CopyVideoType(pTypeIn, inTypeCopy);

@@ -16,7 +16,7 @@ public:
     virtual HRESULT Shutdown() = 0;
 
     HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_type) {
-        GUID neededInputType = GetVideoSubtype(in_media_type);
+        GUID neededInputType = GetSubtype(in_media_type);
         DetectSubtype(neededInputType);
         int i = 0;
         IMFMediaType* inputType = NULL;
