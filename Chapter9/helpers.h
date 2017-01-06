@@ -17,9 +17,10 @@ IMFMediaType* GetMediaType(IMFStreamDescriptor * pStreamDescriptor);
 GUID GetVideoSubtype(IMFMediaType * mediaType);
 GUID GetMajorType(IMFMediaType * mediaType);
 HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key);
-
+HRESULT UnwrapTopo(IMFTopology * pTopology);
 HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type);
 
+HRESULT UnwrapPartialTopo(IMFTopologyNode * node, int level);
 IMFTransform* FindEncoderTransform(GUID out_video_format);
 
 template <class T> void SafeRelease(T **ppT)
