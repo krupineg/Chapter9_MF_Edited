@@ -252,6 +252,8 @@ HRESULT CPlayer::OpenCamera(HWND renderHwnd) {
     pTopology = m_topoBuilder.GetTopology();
     THROW_ON_NULL(pTopology);
 
+    UnwrapTopo(pTopology);
+
     // Step 3: add the topology to the internal queue of topologies associated with this
     // media session
     if (pTopology != NULL)
