@@ -9,7 +9,7 @@
 #include <evr.h>
 #include <Wmcontainer.h>
 #include <InitGuid.h>
-
+#include "SampleGrabberCB.h"
 #include <new>
 
 #include "HttpOutputStreamActivate.h"
@@ -35,12 +35,13 @@ class CTopoBuilder
         HRESULT AfterSessionClose(IMFMediaSession * m_pSession);
         HRESULT Finish(IMFMediaSession * m_pSession);
     private:
-        CComQIPtr<IMFTopology>                  m_pTopology;     // the topology itself
-        CComQIPtr<IMFMediaSource>               m_pSource;       // the MF source
-        CComQIPtr<IMFVideoDisplayControl>       m_pVideoDisplay; // pointer to the mixer
+        CComPtr<IMFTopology>                  m_pTopology;     // the topology itself
+        CComPtr<IMFMediaSource>               m_pSource;       // the MF source
+        CComPtr<IMFVideoDisplayControl>       m_pVideoDisplay; // pointer to the mixer
         HWND                                    m_videoHwnd;     // the target window
         CComPtr<IMFTransform> transform;
         CComPtr<IMFActivate> m_pNetworkSinkActivate;
+        CComPtr<SampleGrabberCB> sampleGrabber;
         CComPtr<IMFMediaSink> m_Sink;
         DWORD m_nextNetworkSinkStreamIndex;
         bool toFile;
