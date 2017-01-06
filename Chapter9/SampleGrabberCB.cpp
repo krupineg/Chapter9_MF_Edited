@@ -1,7 +1,7 @@
 #include "SampleGrabberCB.h"
-HRESULT SampleGrabberCB::CreateInstance(LPCWSTR path, IMFMediaType *pType, SampleGrabberCB **ppCB)
+HRESULT SampleGrabberCB::CreateInstance(LPCWSTR path, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB)
 {
-    *ppCB = new (std::nothrow) SampleGrabberCB(path, pType);
+    *ppCB = new (std::nothrow) SampleGrabberCB(path, pTypeIn, pTypeOut);
 
     if (ppCB == NULL)
     {
@@ -109,6 +109,10 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
 {
     HRESULT hr = S_OK;
     if (!stopped && m_pWriter) {
+        if (timeOffset == 0) {
+            timeOffset = llSampleTime;
+        }
+        llSampleTime = llSampleTime - timeOffset;
         DebugLongLong(L"Sample: start ", llSampleTime);
         CComPtr<IMFSample> sample = CreateMediaSample(dwSampleSize, llSampleTime, llSampleDuration, pSampleBuffer);
         hr = m_pWriter->WriteSample(0, sample);
@@ -122,14 +126,15 @@ void SampleGrabberCB::Stop() {
     stopped = true;
     if (m_pWriter)
     {
-        HRESULT hr = m_pWriter->Finalize();
+        HRESULT hr = m_pWriter->Flush(0);
+        THROW_ON_FAIL(hr);
+        hr = m_pWriter->Finalize();
         THROW_ON_FAIL(hr);
     }
     SafeRelease(&m_pWriter);
 }
 
 STDMETHODIMP SampleGrabberCB::OnShutdown()
-{
-    
+{    
     return S_OK;
 }
