@@ -14,8 +14,9 @@ std:: wstring guidToString(GUID guid) {
 void DebugGuid(std::wstring pref, GUID guid) {
     std::wstring strng;
     std::wstringstream strstream;
+    strstream << L"[DEBUG] ";
     strstream << pref;
-    //strstream << guidToString(guid) << L"\n";
+    strstream << guidToString(guid) << L"\n";
     strng = strstream.str();
     OutputDebugStringW(strng.c_str());
 }
@@ -23,7 +24,7 @@ void DebugGuid(std::wstring pref, GUID guid) {
 void DebugLongLong(std::wstring pref, LONGLONG anything) {
     std::wstring strng;
     std::wstringstream strstream;
-    strstream << pref << anything << L"\n";
+    strstream << L"[DEBUG] " << pref << anything << L"\n";
     strng = strstream.str();
     OutputDebugStringW(strng.c_str());
 }
@@ -32,6 +33,16 @@ void DebugInfo(std::wstring info) {
     std::wstring strng;
     std::wstringstream strstream;
     strstream << info;
+    strng = strstream.str();
+    OutputDebugStringW(strng.c_str());
+}
+
+void DebugLog(std::wstring info) {
+    std::wstring strng;
+    std::wstringstream strstream;
+    strstream << L"[DEBUG] ";
+    strstream << info;
+    strstream << L"\n";
     strng = strstream.str();
     OutputDebugStringW(strng.c_str());
 }
@@ -92,6 +103,7 @@ const std::map<GUID, std::wstring> major_type_map = {
     { MFMediaType_Stream,  L"MFMediaType_Stream" },
     { MFMediaType_Video,  L"MFMediaType_Video" }
 };
+
 std::wstring DetectSubtype(GUID guid) {
     std::wstring  str;
     if (video_type_map.count(guid) != 0) {
@@ -157,6 +169,7 @@ HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key
     return hr;
 }
 
+
 HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type) {
     UINT32 frameRate = 0;
     UINT32 frameRateDenominator;
@@ -164,11 +177,7 @@ HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_
     UINT32 interlace = 0;
     UINT32 denominator = 0;
     UINT32 width, height, bitrate;
-    HRESULT hr = S_OK;
-  
-   
-    //hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AVG_BITRATE);
-    THROW_ON_FAIL(hr);
+    HRESULT hr = S_OK; 
     if (SUCCEEDED(in_media_type ->GetUINT32(MF_MT_AVG_BITRATE, &bitrate)))
     {
         out_mf_media_type->SetUINT32(MF_MT_AVG_BITRATE, bitrate);
@@ -188,6 +197,39 @@ HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_
     hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_INTERLACE_MODE);
     DEBUG_ON_FAIL(hr);
     return hr;
+}
+
+
+HRESULT CopyAudioType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type) {
+    HRESULT hr = S_OK;
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AUDIO_NUM_CHANNELS);
+    DEBUG_ON_FAIL(hr);
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AUDIO_SAMPLES_PER_SECOND);
+    DEBUG_ON_FAIL(hr);
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AUDIO_BLOCK_ALIGNMENT);
+    DEBUG_ON_FAIL(hr);
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AUDIO_AVG_BYTES_PER_SECOND);
+    DEBUG_ON_FAIL(hr);
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AVG_BITRATE);
+    DEBUG_ON_FAIL(hr);
+    return hr;
+}
+
+HRESULT CopyType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type) {
+    GUID major = GetMajorType(in_media_type);
+    HRESULT hr = S_OK;
+    DebugLog(L"copy subtype of " + DetectMajorType(major));
+    if (major == MFMediaType_Audio) {
+        hr = CopyAudioType(in_media_type, out_mf_media_type);
+    }
+    else if (major == MFMediaType_Video) {
+        hr = CopyVideoType(in_media_type, out_mf_media_type);
+    }
+    else {
+        hr = E_FAIL;
+    }
+    THROW_ON_FAIL(hr);
+    DebugLog(L"finished copy subtype");    
 }
 
 HRESULT IPropertyStore_CopyFromAttribute(IMFAttributes * pSrc, IPropertyStore *pps, const GUID& attributeKey, REFPROPERTYKEY key) {
@@ -421,4 +463,90 @@ HRESULT UnwrapTopo(IMFTopology * pTopology) {
     }
     DebugInfo(L"======================\n");
     return hr;
+}
+
+
+IMFMediaType * CreateMediaType(GUID major, GUID minor) {
+    CComPtr<IMFMediaType> outputType = NULL;
+    HRESULT hr = MFCreateMediaType(&outputType);
+    THROW_ON_FAIL(hr);
+    hr = outputType->SetGUID(MF_MT_MAJOR_TYPE, major);
+    THROW_ON_FAIL(hr);
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, minor);
+    THROW_ON_FAIL(hr);
+    return outputType.Detach();
+}
+
+HRESULT NegotiateInputType(IMFTransform * transform, DWORD stream_index, IMFMediaType * in_media_type) {
+    DebugLog(L"negotiate input type");
+    GUID neededInputType = GetSubtype(in_media_type);
+    GUID major = GetMajorType(in_media_type);
+    DebugLog(L"needed input subtype: " + DetectSubtype(neededInputType));
+    int i = 0;
+    //CComPtr<IMFMediaType> outputType = CreateMediaType(major, neededInputType);
+   // HRESULT hr = CopyType(in_media_type, outputType);
+   // THROW_ON_FAIL(hr);
+    HRESULT hr = transform->SetInputType(stream_index, in_media_type, 0);
+    return hr;
+    /*
+    IMFMediaType* inputType = NULL;
+    HRESULT hr = S_OK;
+    while (SUCCEEDED(hr))
+    {
+        hr = transform->GetInputAvailableType(stream_index, i, &inputType);
+        if (FAILED(hr)) {
+            DEBUG_ON_FAIL(hr);
+            break;
+        }
+        i++;
+        GUID minorType;
+        hr = inputType->GetGUID(MF_MT_SUBTYPE, &minorType);
+        THROW_ON_FAIL(hr);
+        DebugLog(L"availabla subtype found: " + DetectSubtype(minorType));
+        if (minorType == neededInputType) {
+            hr = CopyType(in_media_type, inputType);
+            THROW_ON_FAIL(hr);
+            DebugLog(L"set input type");
+            hr = transform->SetInputType(stream_index, inputType, 0);
+            THROW_ON_FAIL(hr);
+            DebugLog(L"successfull set input type");
+            return hr;
+        }
+    }
+    return hr;*/
+}
+
+
+HRESULT NegotiateOutputType(IMFTransform * transform, DWORD stream_index, GUID out_format, IMFMediaType * in_media_type) {
+    DebugLog(L"negotiate output type");
+    int i = 0;
+    HRESULT hr = S_OK;
+    DebugLog(L"needed output subtype: " + DetectSubtype(out_format));
+    GUID major = GetMajorType(in_media_type);
+    CComPtr<IMFMediaType> outputType = CreateMediaType(major, out_format);
+    hr = CopyType(in_media_type, outputType);
+    THROW_ON_FAIL(hr);
+    hr = transform->SetOutputType(stream_index, outputType, 0);
+    return hr;
+    /*
+    while (true) {
+        hr = transform->GetOutputAvailableType(stream_index, i, &outputType);
+        if (FAILED(hr)) {
+            break;
+        }
+        i++;
+        GUID minorType;
+        hr = outputType->GetGUID(MF_MT_SUBTYPE, &minorType);
+        THROW_ON_FAIL(hr);
+        DebugLog(L"availabla subtype found: " + DetectSubtype(minorType));
+        if (minorType == out_format) {
+            hr = CopyType(in_media_type, outputType);
+            THROW_ON_FAIL(hr);
+            DebugLog(L"set output type");
+            hr = transform->SetOutputType(stream_index, outputType, 0);
+            THROW_ON_FAIL(hr);
+            DebugLog(L"successfull set output type");
+            break;
+        }
+    }*/
 }
