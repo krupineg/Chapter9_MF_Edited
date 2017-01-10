@@ -481,12 +481,14 @@ HRESULT NegotiateInputType(IMFTransform * transform, DWORD stream_index, IMFMedi
     DebugLog(L"negotiate input type");
     GUID neededInputType = GetSubtype(in_media_type);
     GUID major = GetMajorType(in_media_type);
+    CComPtr<IMFMediaType> copyType = CreateMediaType(major, neededInputType);
+    HRESULT hr = CopyType(in_media_type, copyType);
     DebugLog(L"needed input subtype: " + DetectSubtype(neededInputType));
     int i = 0;
     //CComPtr<IMFMediaType> outputType = CreateMediaType(major, neededInputType);
    // HRESULT hr = CopyType(in_media_type, outputType);
    // THROW_ON_FAIL(hr);
-    HRESULT hr = transform->SetInputType(stream_index, in_media_type, 0);
+    hr = transform->SetInputType(stream_index, copyType, 0);
     return hr;
     /*
     IMFMediaType* inputType = NULL;
