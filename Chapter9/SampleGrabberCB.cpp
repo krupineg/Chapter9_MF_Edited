@@ -119,6 +119,11 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
         DebugLongLong(L"Sample: start ", llSampleTime);
         hr = WriteSample(m_pWriter, dwSampleSize, llSampleTime, llSampleDuration, pSampleBuffer);
         THROW_ON_FAIL(hr);
+        count++;
+        if (count == 100) {
+            hr = m_builder->Finish();
+            THROW_ON_FAIL(hr);
+        }
     }
     // Display information about the sample.
    
