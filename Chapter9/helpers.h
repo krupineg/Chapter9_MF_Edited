@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Common.h"
 #include <map>
 #include <atlbase.h>
@@ -10,6 +10,8 @@
 #include <mferror.h>
 #include <string>
 #include <Propvarutil.h>
+#include <Wmcodecdsp.h>
+#include "SampleTransform.h"
 std::wstring DetectSubtype(GUID guid);
 std::wstring DetectMajorType(GUID guid);
 void DebugLongLong(std::wstring pref, LONGLONG anything);
@@ -26,7 +28,15 @@ HRESULT NegotiateOutputType(IMFTransform * transform, DWORD stream_index, GUID o
 IMFMediaType * CreateMediaType(GUID major, GUID minor);
 HRESULT UnwrapPartialTopo(IMFTopologyNode * node, int level);
 IMFTransform* FindEncoderTransform(GUID major, GUID minor);
-
+IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, DWORD stream_index, GUID out_type, GUID out_subtype);
+IMFTransform * CreateSampleTransform();
+IMFTransform * CreateRemuxTransform();
+HRESULT AddTransformNode(
+    IMFTopology *pTopology,     // Topology.
+    IMFTransform *pMFT,         // MFT.
+    IMFTopologyNode *output,
+    IMFTopologyNode **ppNode    // Receives the node pointer.
+);
 template <class T> void SafeRelease(T **ppT)
 {
     if (*ppT)

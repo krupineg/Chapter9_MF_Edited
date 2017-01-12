@@ -1,7 +1,7 @@
 #include "SampleGrabberCB.h"
-HRESULT SampleGrabberCB::CreateInstance(LPCWSTR path, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB)
+HRESULT SampleGrabberCB::CreateInstance(IMFSinkWriter * writer, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB)
 {
-    *ppCB = new (std::nothrow) SampleGrabberCB(path, pTypeIn, pTypeOut);
+    *ppCB = new (std::nothrow) SampleGrabberCB(writer, pTypeIn, pTypeOut);
 
     if (ppCB == NULL)
     {
@@ -122,6 +122,11 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
     return hr;
 }
 
+void SampleGrabberCB::Start() {
+    HRESULT hr = m_pWriter->BeginWriting();
+    THROW_ON_FAIL(hr);
+}
+
 void SampleGrabberCB::Stop() {
     stopped = true;
     if (m_pWriter)
@@ -131,7 +136,6 @@ void SampleGrabberCB::Stop() {
         hr = m_pWriter->Finalize();
         THROW_ON_FAIL(hr);
     }
-    SafeRelease(&m_pWriter);
 }
 
 STDMETHODIMP SampleGrabberCB::OnShutdown()

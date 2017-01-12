@@ -169,6 +169,41 @@ HRESULT CopyAttribute(IMFAttributes *pSrc, IMFAttributes *pDest, const GUID& key
     return hr;
 }
 
+HRESULT AddTransformNode(
+    IMFTopology *pTopology,     // Topology.
+    IMFTransform *pMFT,         // MFT.
+    IMFTopologyNode *output,
+    IMFTopologyNode **ppNode    // Receives the node pointer.
+)
+{
+    *ppNode = NULL;
+
+    CComPtr<IMFTopologyNode> pNode = NULL;
+
+    // Create the node.
+    HRESULT hr = MFCreateTopologyNode(MF_TOPOLOGY_TRANSFORM_NODE, &pNode);
+    THROW_ON_FAIL(hr);
+
+    // Set the object pointer.
+    hr = pNode->SetObject(pMFT);
+    THROW_ON_FAIL(hr);
+
+    hr = pNode->SetUINT32(MF_TOPONODE_STREAMID, 0);
+
+    // Add the node to the topology.
+    hr = pTopology->AddNode(pNode);
+    THROW_ON_FAIL(hr);
+
+    hr = pNode->ConnectOutput(0, output, 0);
+    THROW_ON_FAIL(hr);
+    // Return the pointer to the caller.
+
+    *ppNode = pNode;
+    (*ppNode)->AddRef();
+
+    return hr;
+}
+
 
 HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_type) {
     UINT32 frameRate = 0;
@@ -182,6 +217,16 @@ HRESULT CopyVideoType(IMFMediaType * in_media_type, IMFMediaType * out_mf_media_
     {
         out_mf_media_type->SetUINT32(MF_MT_AVG_BITRATE, bitrate);
     }
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_AM_FORMAT_TYPE);
+    DEBUG_ON_FAIL(hr);
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FIXED_SIZE_SAMPLES);
+    DEBUG_ON_FAIL(hr);
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_ALL_SAMPLES_INDEPENDENT);
+    DEBUG_ON_FAIL(hr); 
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_RATE_RANGE_MIN);
+    DEBUG_ON_FAIL(hr); 
+    hr = CopyAttribute(in_media_type, out_mf_media_type, MF_MT_FRAME_RATE_RANGE_MAX);
+    DEBUG_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_SIZE, &width, &height);
     DEBUG_ON_FAIL(hr);
     hr = MFGetAttributeRatio(in_media_type, MF_MT_FRAME_RATE, &frameRate, &frameRateDenominator);
@@ -551,4 +596,67 @@ HRESULT NegotiateOutputType(IMFTransform * transform, DWORD stream_index, GUID o
             break;
         }
     }*/
+}
+
+
+IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, DWORD stream_index, GUID out_type, GUID out_subtype)
+{
+    DebugLog(L"Create encoder from " + DetectSubtype(GetSubtype(in_media_type)) + L" to " + DetectSubtype(out_subtype));
+    IMFTransform * pEncoder = FindEncoderTransform(out_type, out_subtype);
+    HRESULT hr = S_OK;
+    DWORD inputstreamsCount;
+    DWORD outputstreamsCount;
+
+    hr = pEncoder->GetStreamCount(&inputstreamsCount, &outputstreamsCount);
+    THROW_ON_FAIL(hr);
+    HRESULT inputHr = NegotiateInputType(pEncoder, stream_index, in_media_type);
+    hr = NegotiateOutputType(pEncoder, stream_index, out_subtype, in_media_type);
+    DWORD mftStatus = 0;
+    pEncoder->GetInputStatus(0, &mftStatus);
+    if (MFT_INPUT_STATUS_ACCEPT_DATA != mftStatus) {
+        DebugLog(L"need to set output type before input");
+    }
+    THROW_ON_FAIL(hr);
+    if (FAILED(inputHr)) {
+        hr = NegotiateInputType(pEncoder, stream_index, in_media_type);
+        THROW_ON_FAIL(hr);
+    }
+    DebugLog(L"encoder is created successfully");
+    return pEncoder;
+}
+
+
+IMFTransform * CreateSampleTransform() {
+    //create color converter
+    /*HRESULT hr = DllRegisterServer();
+    THROW_ON_FAIL(hr);
+    IMFTransform *sampleTransform = NULL;
+    hr = CoCreateInstance(CLSID_SampleTransformMFT, NULL, CLSCTX_INPROC_SERVER, IID_IMFTransform, (void**)&sampleTransform);*/
+    return new (std::nothrow) SampleTransform();
+}
+
+IMFTransform * CreateRemuxTransform() {
+    IMFTransform *pIMFTransform = NULL;
+    HRESULT hr = CoCreateInstance(
+        CLSID_CMSH264RemuxMFT,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IMFTransform,
+        (void**)&pIMFTransform
+    );
+    return pIMFTransform;
+}
+
+
+
+IMFTransform* CreateColorConverterMFT()
+{
+    //register color converter locally
+    THROW_ON_FAIL(MFTRegisterLocalByCLSID(__uuidof(CColorConvertDMO), MFT_CATEGORY_VIDEO_PROCESSOR, L"", MFT_ENUM_FLAG_SYNCMFT, 0, NULL, 0, NULL));
+
+    //create color converter
+    IMFTransform *pColorConverterMFT = NULL;
+    THROW_ON_FAIL(CoCreateInstance(__uuidof(CColorConvertDMO), NULL, CLSCTX_INPROC_SERVER, IID_IMFTransform, (void**)&pColorConverterMFT));
+
+    return pColorConverterMFT;
 }

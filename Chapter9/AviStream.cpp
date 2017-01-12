@@ -201,7 +201,7 @@ HRESULT CAviStream::ProcessSample(IMFSample* pSample)
         BREAK_ON_NULL(m_pSinkCallback, E_UNEXPECTED);
 
         // add the sample to the internal sample queue
-        THROW_ON_FAIL( m_sampleQueue.AddTail(pMediaSample) );
+        m_sampleQueue.AddTail(pMediaSample);
 
         // schedule an asynchronous work item on the sink that will cause it to pull out
         // the new sample that has just arrived
@@ -801,7 +801,7 @@ HRESULT CAviStream::TryFireMarkerEvent(HRESULT markerResult)
         }
 
         // get the sample from the head of the queue, making sure to check for exceptions
-        THROW_ON_FAIL( pHeadSample = m_sampleQueue.GetHead() );
+        pHeadSample = m_sampleQueue.GetHead();
         BREAK_ON_FAIL(hr);
         BREAK_ON_NULL(pHeadSample, E_UNEXPECTED);
 

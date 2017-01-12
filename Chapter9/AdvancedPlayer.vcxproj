@@ -229,6 +229,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SampleGrabberCB.cpp" />
     <ClCompile Include="SampleTransform.cpp" />
+    <ClCompile Include="TobiiTopoBuilder.cpp" />
     <ClCompile Include="TopoBuilder.cpp" />
     <ClCompile Include="VideoSink.cpp" />
     <ClCompile Include="winmain.cpp" />
@@ -241,7 +242,9 @@
     <ClInclude Include="AviStream.h" />
     <ClInclude Include="ByteStreamWriteData.h" />
     <ClInclude Include="Common.h" />
-    <ClInclude Include="FileVideoSink.h" />
+    <ClInclude Include="CTopoBuilderBase.h" />
+    <ClInclude Include="MediaMP4VideoSink.h" />
+    <ClInclude Include="SampleGrabberVideoSink.h" />
     <ClInclude Include="helpers.h" />
     <ClInclude Include="HttpOutputStreamActivate.h" />
     <ClInclude Include="HttpOutputByteStream.h" />
@@ -251,6 +254,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SampleGrabberCB.h" />
     <ClInclude Include="SampleTransform.h" />
+    <ClInclude Include="TobiiTopoBuilder.h" />
     <ClInclude Include="TopoBuilder.h" />
     <ClInclude Include="VideoSink.h" />
   </ItemGroup>

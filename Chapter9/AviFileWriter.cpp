@@ -66,7 +66,7 @@ HRESULT CAviFileWriter::AddStream(IMFMediaType* pMT, DWORD id)
 
         pNewStreamData->nNextSample = 0;
         
-        THROW_ON_FAIL( m_streamHash[id] = pNewStreamData );
+         m_streamHash[id] = pNewStreamData;
     }
     while(false);
 
@@ -119,7 +119,8 @@ HRESULT CAviFileWriter::AddAudioStream(IMFMediaType* pMT, IAVIStream** ppStream)
         // create the audio stream
         hr = m_pAviFile->CreateStream(ppStream, &streamInfo);
         BREAK_ON_FAIL(hr);
-
+        IMFByteStream * str;
+        
         // set the format of the stream
         hr = (*ppStream)->SetFormat(0, m_pAudioFormat, waveFormatExSize);
         BREAK_ON_FAIL(hr);

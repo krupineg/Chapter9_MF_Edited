@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-
+#include "TobiiTopoBuilder.h"
 #include "TopoBuilder.h"
 
 #include <D3D9Types.h>

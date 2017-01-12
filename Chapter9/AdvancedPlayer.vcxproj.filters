@@ -40,6 +40,9 @@
     <ClCompile Include="AviSink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TobiiTopoBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -96,7 +99,16 @@
     <ClInclude Include="RendererVideoSink.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="FileVideoSink.h">
+    <ClInclude Include="SampleGrabberVideoSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaMP4VideoSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="TobiiTopoBuilder.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="CTopoBuilderBase.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

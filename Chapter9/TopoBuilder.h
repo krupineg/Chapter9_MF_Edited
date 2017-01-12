@@ -11,10 +11,10 @@
 #include <InitGuid.h>
 #include "SampleGrabberCB.h"
 #include <new>
-
+#include "AbstractVideoSink.h"
 #include "HttpOutputStreamActivate.h"
-
-class CTopoBuilder
+#include "CTopoBuilderBase.h"
+class CTopoBuilder : public CTopoBuilderBase
 {
     public:
         CTopoBuilder()
@@ -34,15 +34,19 @@ class CTopoBuilder
         HRESULT ShutdownSource(void);
         HRESULT AfterSessionClose(IMFMediaSession * m_pSession);
         HRESULT Finish(IMFMediaSession * m_pSession);
+        const LPCWSTR fileName =  L"C:\\Users\\Public\\Encoded2.mp4";
+        
     private:
         CComPtr<IMFTopology>                  m_pTopology;     // the topology itself
         CComPtr<IMFMediaSource>               m_pSource;       // the MF source
         CComPtr<IMFVideoDisplayControl>       m_pVideoDisplay; // pointer to the mixer
         HWND                                    m_videoHwnd;     // the target window
-        CComPtr<IMFTransform> transform;
         CComPtr<IMFActivate> m_pNetworkSinkActivate;
+        CComPtr<IMFSinkWriter>  sink_writer;
+        CComPtr<IMFMediaSink>  m_MediaSink;
+        CComPtr<IMFByteStream> byte_stream;  
+        CComPtr<IMFTransform> transform;
         CComPtr<SampleGrabberCB> sampleGrabber;
-        CComPtr<IMFMediaSink> m_Sink;
         DWORD m_nextNetworkSinkStreamIndex;
         bool toFile;
         bool m_addRenderers;
@@ -50,14 +54,12 @@ class CTopoBuilder
         HRESULT CreateMediaSource();
         HRESULT CreateMediaSource(PCWSTR sURL);
         HRESULT CreateNetworkSink(DWORD requestPort);
-        HRESULT CreateFileSink(PCWSTR filePath, IMFMediaType * out_mf_media_type);
+        HRESULT CreateFileSink(IMFMediaType * in_mf_media_type_video);
 		HRESULT CreateTeeMp4Twig(
-			IMFPresentationDescriptor* pPresDescriptor, 
-			IMFStreamDescriptor* pStreamDescriptor,
-			IMFTopologyNode* pRendererNode,
-			IMFTopologyNode** ppTeeNode);
+            IMFPresentationDescriptor* pPresDescriptor, IMFTransform * transform, IMFStreamDescriptor* pStreamDescriptor,
+            IMFTopologyNode* pRendererNode, IMFTopologyNode** ppTeeNode, IMFMediaSink * m_Sink);
         HRESULT CreateTopology(void);
-        IMFTopologyNode * AddEncoderIfNeed(IMFTopology * topology, IMFStreamDescriptor * pStreamDescriptor, IMFTopologyNode * output_node);
+        IMFTopologyNode * AddEncoderIfNeed(IMFTopology * topology, IMFTransform * transform, IMFStreamDescriptor * pStreamDescriptor, IMFTopologyNode * output_node);
         HRESULT AddBranchToPartialTopology(
             CComPtr<IMFPresentationDescriptor> pPresDescriptor, 
             DWORD iStream);

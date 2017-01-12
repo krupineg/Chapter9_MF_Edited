@@ -157,6 +157,10 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
             if (TopoStatus == MF_TOPOSTATUS_READY)
             {
                 hr = OnTopologyReady();
+
+                CComPtr<IMFTopology> topo;
+                m_pSession->GetFullTopology(0, MFSESSION_GETFULLTOPOLOGY_CURRENT, &topo);
+                UnwrapTopo(topo);
             }
 
             if (TopoStatus == MF_TOPOSTATUS_ENDED) {
@@ -252,7 +256,7 @@ HRESULT CPlayer::OpenCamera(HWND renderHwnd) {
     pTopology = m_topoBuilder.GetTopology();
     THROW_ON_NULL(pTopology);
 
-    UnwrapTopo(pTopology);
+    
 
     // Step 3: add the topology to the internal queue of topologies associated with this
     // media session
@@ -515,7 +519,6 @@ HRESULT CPlayer::Repaint(void)
 HRESULT CPlayer::OnTopologyReady(void)
 {
     HRESULT hr = S_OK;
-    
     // release any previous instance of the m_pVideoDisplay interface
     m_pVideoDisplay.Release();
 
@@ -539,6 +542,8 @@ HRESULT CPlayer::OnTopologyReady(void)
     m_pRateControl = NULL;
     MFGetService(m_pSession, MF_RATE_CONTROL_SERVICE, IID_IMFRateControl, (void**)&m_pRateControl);
 
+    
+    THROW_ON_FAIL(hr);
     return hr;
 }
 
