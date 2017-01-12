@@ -27,7 +27,9 @@ class SampleGrabberCB : public IMFSampleGrabberSinkCallback
         HRESULT hr = S_OK;    
         DWORD index = 0;
         hr = pWriter->AddStream(pTypeOut, &index);
-        THROW_ON_FAIL(hr);
+        if (hr != MF_E_STREAMSINKS_FIXED) {
+            THROW_ON_FAIL(hr);
+        }
         hr = pWriter->SetInputMediaType(index, pTypeIn, NULL);
         THROW_ON_FAIL(hr);
         return hr;
