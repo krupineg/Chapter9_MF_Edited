@@ -13,17 +13,17 @@ IMFTopologyNode* CTopoBuilder::AddEncoderIfNeed(IMFTopology * topology, IMFTrans
 {
     CComPtr<IMFTopologyNode> transformNode;
     CComPtr<IMFTopologyNode> colorConverterNode;
-   // CComPtr<IMFTopologyNode> sampleTransformNode;
+    CComPtr<IMFTopologyNode> sampleTransformNode;
     HRESULT hr = S_OK;
     IMFMediaType * mediaType = GetMediaType(pStreamDescriptor);
-    //CComPtr<IMFTransform> sampleTransform;
-    //sampleTransform = CreateSampleTransform();
-    //hr = AddTransformNode(topology, remux, output_node, &remuxNode);
+    CComPtr<IMFTransform> sampleTransform;
+    sampleTransform = CreateSampleTransform();
+    hr = AddTransformNode(topology, sampleTransform, output_node, &sampleTransformNode);
     THROW_ON_FAIL(hr);
     GUID minorType = GetSubtype(mediaType);
     if (transform != NULL) {
         DebugInfo(DetectSubtype(minorType));        
-        hr = AddTransformNode(topology, transform, output_node, &transformNode);
+        hr = AddTransformNode(topology, transform, sampleTransformNode, &transformNode);
         THROW_ON_FAIL(hr);
         /*hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
         THROW_ON_FAIL(hr);*/
@@ -170,20 +170,22 @@ HRESULT CTopoBuilder::CreateFileSink(IMFMediaType * in_mf_media_type)
         if (transform)
         {
             hr = transform->GetOutputCurrentType(0, &outputType);
+
             THROW_ON_FAIL(hr);
         }
         else {
             outputType = out_mf_media_type.Detach();
         }
-
+        hr = outputType->SetUINT32(MF_MPEG4SINK_SPSPPS_PASSTHROUGH, 1);
+        THROW_ON_FAIL(hr);
         GUID majorType = GetMajorType(outputType);
         if (majorType == MFMediaType_Video) {
             hr = MFCreateMPEG4MediaSink(byte_stream, outputType, NULL, &m_MediaSink);
             
-            MFCreateSinkWriterFromMediaSink(m_MediaSink, NULL, &sink_writer);
+           /* MFCreateSinkWriterFromMediaSink(m_MediaSink, NULL, &sink_writer);
             hr = SampleGrabberCB::CreateInstance(sink_writer, in_mf_media_type, out_mf_media_type, &sampleGrabber);
             m_MediaSink.Detach();
-            hr = sink_writer->BeginWriting();
+            hr = sink_writer->BeginWriting();*/
         }
     }
     else {
@@ -192,7 +194,7 @@ HRESULT CTopoBuilder::CreateFileSink(IMFMediaType * in_mf_media_type)
             NULL,
             &sink_writer);
         THROW_ON_FAIL(hr);
-        hr = SampleGrabberCB::CreateInstance(sink_writer, in_mf_media_type, out_mf_media_type, &sampleGrabber);
+        hr = SampleGrabberCB::CreateInstance(sink_writer, this, in_mf_media_type, out_mf_media_type, &sampleGrabber);
 
         hr = sink_writer->BeginWriting();
         THROW_ON_FAIL(hr);
@@ -307,7 +309,7 @@ HRESULT CTopoBuilder::ShutdownSource(void)
     return hr;
 }
 
-HRESULT CTopoBuilder::Finish(IMFMediaSession * m_pSession) {
+HRESULT CTopoBuilder::Finish() {
     HRESULT hr = S_OK;
     if (m_pSession) {
         hr = m_pSession->Close();
@@ -315,7 +317,7 @@ HRESULT CTopoBuilder::Finish(IMFMediaSession * m_pSession) {
     return hr;
 }
 
-HRESULT CTopoBuilder::AfterSessionClose(IMFMediaSession * m_pSession) {
+HRESULT CTopoBuilder::AfterSessionClose() {
     HRESULT hr = S_OK;
     if (sampleGrabber) {
         sampleGrabber->Stop();
@@ -346,7 +348,7 @@ HRESULT CTopoBuilder::AfterSessionClose(IMFMediaSession * m_pSession) {
 //
 HRESULT CTopoBuilder::CreateTopology(void)
 {
-    bool imfmediasink = true;
+    bool imfmediasink = false;
     HRESULT hr = S_OK;
     CComQIPtr<IMFPresentationDescriptor> pPresDescriptor;
     DWORD nSourceStreams = 0;

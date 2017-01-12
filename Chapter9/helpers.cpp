@@ -490,21 +490,27 @@ HRESULT UnwrapTopo(IMFTopology * pTopology) {
     DebugInfo(L"\n");
     DebugInfo(L"======================\n");
     DebugInfo(L"DEBUG TOPOLOGY\n");
-    HRESULT hr = pTopology->GetNodeCount(&nodeCount);
-    for (int i = 0; i < nodeCount; i++) {
-        CComPtr<IMFTopologyNode> node = NULL;
-        hr = pTopology->GetNode(i, &node);
-        if (SUCCEEDED(hr)) {
-            MF_TOPOLOGY_TYPE type;
-            hr = node->GetNodeType(&type);
+    HRESULT hr = S_OK;
+    if (pTopology) {
+        hr = pTopology->GetNodeCount(&nodeCount);
+        for (int i = 0; i < nodeCount; i++) {
+            CComPtr<IMFTopologyNode> node = NULL;
+            hr = pTopology->GetNode(i, &node);
             if (SUCCEEDED(hr)) {
-                if (type == MF_TOPOLOGY_SOURCESTREAM_NODE) {
-                    hr = UnwrapPartialTopo(node, 0);
+                MF_TOPOLOGY_TYPE type;
+                hr = node->GetNodeType(&type);
+                if (SUCCEEDED(hr)) {
+                    if (type == MF_TOPOLOGY_SOURCESTREAM_NODE) {
+                        hr = UnwrapPartialTopo(node, 0);
+                    }
                 }
+
             }
-           
+
         }
-       
+    }
+    else {
+        DebugInfo(L"Topology is null");
     }
     DebugInfo(L"======================\n");
     return hr;

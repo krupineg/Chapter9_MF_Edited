@@ -13,7 +13,6 @@ CPlayer::CPlayer(HWND videoWindow) :
     m_nRefCount(1),
     m_duration(0),
     m_isSeekbarVisible(false)
-
 {
     // Start up Media Foundation platform.
     MFStartup(MF_VERSION);
@@ -66,7 +65,7 @@ HRESULT CPlayer::Invoke(IMFAsyncResult* pAsyncResult)
         // down the session and release resources associated with the session.
         if (eventType == MESessionClosed)
         {
-            m_topoBuilder.AfterSessionClose(m_pSession);
+            m_topoBuilder.AfterSessionClose();
             SetEvent(m_closeCompleteEvent);
         }
         else
@@ -165,7 +164,7 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
 
             if (TopoStatus == MF_TOPOSTATUS_ENDED) {
 
-                HRESULT hr = m_topoBuilder.Finish(m_pSession);
+                HRESULT hr = m_topoBuilder.Finish();
                 THROW_ON_FAIL(hr);
             }
         }
@@ -583,7 +582,7 @@ HRESULT CPlayer::CreateSession(void)
         BREAK_ON_FAIL(hr);
 
         m_state = PlayerState_Ready;
-
+        m_topoBuilder.SetSession(m_pSession);
         // designate this class as the one that will be handling events from the media 
         // session
         hr = m_pSession->BeginGetEvent((IMFAsyncCallback*)this, NULL);

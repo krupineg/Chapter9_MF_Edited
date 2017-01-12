@@ -829,8 +829,23 @@ HRESULT SampleTransform::ProcessOutput(
     MFTIME newValue = currentSampleTime - timeOffset;
     DebugLongLong(L"count: ", sampleCount);
     DebugLongLong(L"raw: ", currentSampleTime);
+    LONGLONG deviceTS = MFGetAttributeUINT64(pSample, MFSampleExtension_DeviceTimestamp, 0);
+    THROW_ON_FAIL(hr);
     DebugLongLong(L"new value: ", newValue);
-    pSample->SetSampleTime(currentSampleTime);
+    DebugLongLong(L"device: ", deviceTS);
+    //hr = pSample->SetSampleTime(currentSampleTime);
+    THROW_ON_FAIL(hr);
+    pSample->SetUINT64(MFSampleExtension_DecodeTimestamp, currentSampleTime);
+    UINT isKeyFrame;
+    hr = pSample->GetUINT32(MFSampleExtension_CleanPoint, &isKeyFrame);
+    THROW_ON_FAIL(hr);
+    if (isKeyFrame != 0)
+    {
+        DebugLog(L"KEYFRAME");
+
+    }
+
+    
     /*   CComPtr<IMFSample> reConstructedVideoSample;
     CComPtr<IMFMediaBuffer> srcBuf = NULL;
     CComPtr<IMFMediaBuffer> reConstructedBuffer = NULL;
@@ -884,7 +899,7 @@ HRESULT SampleTransform::ProcessOutput(
     // Detach the output sample from the MFT and put the pointer for
     // the processed sample into the output buffer
     pOutputSampleBuffer[0].pSample = pSample;
-
+    
     // Set status flags for output
     pOutputSampleBuffer[0].dwStatus = 0;
             

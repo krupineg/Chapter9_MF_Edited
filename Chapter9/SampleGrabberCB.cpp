@@ -1,7 +1,7 @@
 #include "SampleGrabberCB.h"
-HRESULT SampleGrabberCB::CreateInstance(IMFSinkWriter * writer, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB)
+HRESULT SampleGrabberCB::CreateInstance(IMFSinkWriter * writer, CTopoBuilderBase * builder, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB)
 {
-    *ppCB = new (std::nothrow) SampleGrabberCB(writer, pTypeIn, pTypeOut);
+    *ppCB = new (std::nothrow) SampleGrabberCB(writer, builder, pTypeIn, pTypeOut);
 
     if (ppCB == NULL)
     {
@@ -131,14 +131,18 @@ void SampleGrabberCB::Start() {
 }
 
 void SampleGrabberCB::Stop() {
-    stopped = true;
-    if (m_pWriter)
-    {
-        HRESULT hr = m_pWriter->Flush(0);
-        THROW_ON_FAIL(hr);
-        hr = m_pWriter->Finalize();
-        THROW_ON_FAIL(hr);
+    if (!stopped) {
+        stopped = true;
+        if (m_pWriter)
+        {
+            HRESULT hr = m_pWriter->Flush(0);
+            THROW_ON_FAIL(hr);
+            hr = m_pWriter->Finalize();
+            THROW_ON_FAIL(hr);
+            m_pWriter = NULL;
+        }
     }
+   
 }
 
 STDMETHODIMP SampleGrabberCB::OnShutdown()

@@ -73,7 +73,7 @@ private:
         hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, out_subtype);
         THROW_ON_FAIL(hr);
         hr = CopyType(in_mf_media_type, out_mf_media_type);      
-        hr = SampleGrabberCB::CreateInstance(m_pWriter, in_mf_media_type, out_mf_media_type, &m_Sink);
+        hr = SampleGrabberCB::CreateInstance(m_pWriter,NULL, in_mf_media_type, out_mf_media_type, &m_Sink);
     }
 
 };

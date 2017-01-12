@@ -2,15 +2,17 @@
 #include "Common.h"
 #include <Wmcodecdsp.h>
 #include <mfreadwrite.h>
-
+#include "CTopoBuilderBase.h"
 class SampleGrabberCB : public IMFSampleGrabberSinkCallback
 {
     bool stopped;
     long m_cRef;
+    int count = 0;
+    CTopoBuilderBase * m_builder;
     CComPtr<IMFSinkWriter> m_pWriter;
-    SampleGrabberCB(IMFSinkWriter * writer, IMFMediaType * pTypeIn, IMFMediaType *pTypeOut) : m_cRef(1), stopped(false) {
+    SampleGrabberCB(IMFSinkWriter * writer, CTopoBuilderBase * builder, IMFMediaType * pTypeIn, IMFMediaType *pTypeOut) : m_cRef(1), stopped(false) {
         m_pWriter = writer;
-      
+        m_builder = builder;
         CComPtr<IMFMediaType> inTypeCopy = CreateMediaType(GetMajorType(pTypeIn), GetSubtype(pTypeIn));
         HRESULT hr = CopyType(pTypeIn, inTypeCopy);
         THROW_ON_FAIL(hr);
@@ -37,7 +39,7 @@ class SampleGrabberCB : public IMFSampleGrabberSinkCallback
     CRITICAL_SECTION        m_critsec;
 
 public:
-    static HRESULT CreateInstance(IMFSinkWriter * writer, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB);
+    static HRESULT CreateInstance(IMFSinkWriter * writer, CTopoBuilderBase * builder, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB);
     void Stop();
     void Start();
     // IUnknown methods

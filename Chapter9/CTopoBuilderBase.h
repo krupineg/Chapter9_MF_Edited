@@ -8,6 +8,15 @@ public:
     virtual IMFTopology* GetTopology(void) = 0;
 
     virtual  HRESULT ShutdownSource(void) = 0;
-    virtual  HRESULT AfterSessionClose(IMFMediaSession * m_pSession) = 0;
-    virtual   HRESULT Finish(IMFMediaSession * m_pSession) = 0;
+    virtual  HRESULT AfterSessionClose() = 0;
+    virtual   HRESULT Finish() = 0;
+
+
+  
+    HRESULT SetSession(IMFMediaSession * session) {
+        m_pSession = session;
+        return S_OK;
+    }
+protected:
+    CComPtr<IMFMediaSession> m_pSession;
 };

@@ -30,10 +30,10 @@ class CTopoBuilder : public CTopoBuilderBase
         HRESULT RenderURL(PCWSTR fileUrl, HWND videoHwnd, bool addNetwork);
         HRESULT RenderCamera(HWND videoHwnd, bool addNetwork);
         IMFTopology* GetTopology(void) { return m_pTopology; }
-
+        
         HRESULT ShutdownSource(void);
-        HRESULT AfterSessionClose(IMFMediaSession * m_pSession);
-        HRESULT Finish(IMFMediaSession * m_pSession);
+        HRESULT AfterSessionClose();
+        HRESULT Finish();
         const LPCWSTR fileName =  L"C:\\Users\\Public\\Encoded2.mp4";
         
     private:
