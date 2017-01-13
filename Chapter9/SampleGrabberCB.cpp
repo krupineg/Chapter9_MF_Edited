@@ -75,10 +75,10 @@ STDMETHODIMP SampleGrabberCB::OnSetPresentationClock(IMFPresentationClock* pCloc
     return S_OK;
 }
 
-IMFSample * CreateMediaSample(DWORD cbData, LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE *buff)
+HRESULT WriteSample(IMFSinkWriter* writer, DWORD cbData, LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE *buff)
 {
-    IMFMediaBuffer  *pMediaBuffer;
-    IMFSample *pSample;
+    IMFMediaBuffer*  pMediaBuffer;
+    IMFSample* pSample;
     DWORD  cbMaxLength, cbCurrentLength;
     BYTE  *pbBuffer;
     HRESULT hr = MFCreateMemoryBuffer(cbData, &pMediaBuffer);
@@ -100,7 +100,10 @@ IMFSample * CreateMediaSample(DWORD cbData, LONGLONG llSampleTime, LONGLONG llSa
     THROW_ON_FAIL(hr);
     hr = pSample->SetSampleTime(llSampleTime);
     THROW_ON_FAIL(hr);
-    return pSample;
+    hr = writer->WriteSample(0, pSample);
+    THROW_ON_FAIL(hr);
+    SafeRelease(&pMediaBuffer);
+    SafeRelease(&pSample);
 }
 
 STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
@@ -114,8 +117,8 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
         }
         llSampleTime = llSampleTime - timeOffset;
         DebugLongLong(L"Sample: start ", llSampleTime);
-        CComPtr<IMFSample> sample = CreateMediaSample(dwSampleSize, llSampleTime, llSampleDuration, pSampleBuffer);
-        hr = m_pWriter->WriteSample(0, sample);
+        hr = WriteSample(m_pWriter, dwSampleSize, llSampleTime, llSampleDuration, pSampleBuffer);
+        THROW_ON_FAIL(hr);
     }
     // Display information about the sample.
    
