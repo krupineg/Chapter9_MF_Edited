@@ -89,8 +89,8 @@ IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, GUID out_type, GUID
 
     hr = pEncoder->GetStreamCount(&inputstreamsCount, &outputstreamsCount);
     THROW_ON_FAIL(hr);
-    HRESULT inputHr = negotiateInputType(pEncoder, in_media_type);
-    hr = negotiateOutputType(pEncoder, out_subtype, in_media_type);
+    HRESULT inputHr = NegotiateInputType(pEncoder, 0, in_media_type);
+    hr = NegotiateOutputType(pEncoder, 0, out_subtype, in_media_type);
     DWORD mftStatus = 0;
     pEncoder->GetInputStatus(0, &mftStatus);
     if (MFT_INPUT_STATUS_ACCEPT_DATA != mftStatus) {
@@ -99,7 +99,7 @@ IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, GUID out_type, GUID
 
     THROW_ON_FAIL(hr);
     if (FAILED(inputHr)){
-        hr = negotiateInputType(pEncoder, in_media_type);
+        hr = NegotiateInputType(pEncoder, 0, in_media_type);
         THROW_ON_FAIL(hr);
     }
     return pEncoder;
@@ -148,6 +148,7 @@ IMFTopologyNode* CTopoBuilder::AddEncoderIfNeed(IMFTopology * topology, IMFStrea
     HRESULT hr = S_OK;
     IMFMediaType * mediaType = GetMediaType(pStreamDescriptor);
     CComPtr<IMFTransform> sampleTransform;
+    CComPtr<IMFTransform> color = CreateColorConverterMFT();
    // sampleTransform = CreateSampleTransform();
    // hr = AddTransformNode(topology, sampleTransform, output_node, &sampleTransformNode);
     THROW_ON_FAIL(hr);
@@ -159,9 +160,9 @@ IMFTopologyNode* CTopoBuilder::AddEncoderIfNeed(IMFTopology * topology, IMFStrea
         
         hr = AddTransformNode(topology, transform, output_node, &transformNode);
         THROW_ON_FAIL(hr);
-        /*hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
-        THROW_ON_FAIL(hr);*/
-        return transformNode.Detach();
+        hr = AddTransformNode(topology, color, transformNode, &colorConverterNode);
+        THROW_ON_FAIL(hr);
+        return colorConverterNode.Detach();
     }
     else {
         return sampleTransformNode;
