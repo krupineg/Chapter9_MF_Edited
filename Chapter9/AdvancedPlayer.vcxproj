@@ -223,6 +223,7 @@
     <ClCompile Include="AviSink.cpp" />
     <ClCompile Include="AviStream.cpp" />
     <ClCompile Include="ByteStreamWriteData.cpp" />
+    <ClCompile Include="FormatReader.cpp" />
     <ClCompile Include="helpers.cpp" />
     <ClCompile Include="HttpOutputStreamActivate.cpp" />
     <ClCompile Include="HttpOutputByteStream.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="ByteStreamWriteData.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="FileVideoSink.h" />
+    <ClInclude Include="FormatReader.h" />
     <ClInclude Include="helpers.h" />
     <ClInclude Include="HttpOutputStreamActivate.h" />
     <ClInclude Include="HttpOutputByteStream.h" />

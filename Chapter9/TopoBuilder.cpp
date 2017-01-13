@@ -7,6 +7,7 @@
 #include <Wmcodecdsp.h>
 #include "AviSink.h"
 #include "SampleGrabberCB.h"
+#include "FormatReader.h"
 IMFTransform * CreateSampleTransform() {
     //create color converter
     /*HRESULT hr = DllRegisterServer();
@@ -318,7 +319,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
         THROW_ON_FAIL(hr);
     }
     // m_Sink = new (std::nothrow) CAviSink(L"c:\\users\\public\\file.avi", &hr);
-    
+    FormatReader::getInstance().Read(L"out media type for sink", out_mf_media_type);
     if (imfmediasink) {
 
         hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);

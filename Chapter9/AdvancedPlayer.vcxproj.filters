@@ -40,6 +40,9 @@
     <ClCompile Include="AviSink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FormatReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -97,6 +100,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="FileVideoSink.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="FormatReader.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
