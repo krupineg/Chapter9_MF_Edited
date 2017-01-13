@@ -19,8 +19,7 @@ using namespace ATL;
 
 #define BREAK_ON_FAIL(value)            if(FAILED(value)) break;
 #define BREAK_ON_NULL(value, newHr)     if(value == NULL) { hr = newHr; break; }
-
-#define THROW_ON_FAIL(value)     if(FAILED(value)) { throw; }
 #define DEBUG_ON_FAIL(value)     if(FAILED(value)) {  _com_error err(value); LPCTSTR errMsg = err.ErrorMessage(); DebugInfo(L"\n================\nERROR:\n"); DebugInfo(errMsg); DebugInfo(L"================\n");}
+#define THROW_ON_FAIL(value)     if(FAILED(value)) { DEBUG_ON_FAIL(value); throw; }
 #define THROW_ON_NULL(value)     if(value == NULL) { throw; }
 #define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }

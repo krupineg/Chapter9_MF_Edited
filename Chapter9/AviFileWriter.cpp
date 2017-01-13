@@ -66,7 +66,7 @@ HRESULT CAviFileWriter::AddStream(IMFMediaType* pMT, DWORD id)
 
         pNewStreamData->nNextSample = 0;
         
-        THROW_ON_FAIL( m_streamHash[id] = pNewStreamData );
+        m_streamHash[id] = pNewStreamData;
     }
     while(false);
 

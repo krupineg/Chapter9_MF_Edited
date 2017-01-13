@@ -45,9 +45,7 @@ HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_typ
             return getType;
         }       
         THROW_ON_FAIL(hr);        
-        GUID minorType;
-        hr = inputType->GetGUID(MF_MT_SUBTYPE, &minorType);
-        THROW_ON_FAIL(hr);
+        GUID minorType = GetSubtype(inputType); 
         DebugInfo(DetectSubtype(minorType));
         if (minorType == neededInputType) {
             hr = CopyType(in_media_type, inputType);
@@ -70,11 +68,7 @@ HRESULT negotiateOutputType(IMFTransform * transform, GUID out_video_format, IMF
             break;
         }
         i++;
-        GUID minorType;      
-       
-        hr = outputType->GetGUID(MF_MT_SUBTYPE, &minorType);
-        THROW_ON_FAIL(hr);
-        
+        GUID minorType = GetSubtype(outputType);        
         if (minorType == out_video_format) {
             hr = CopyType(in_media_type, outputType);
             THROW_ON_FAIL(hr);
