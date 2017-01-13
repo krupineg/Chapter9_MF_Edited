@@ -81,29 +81,37 @@ HRESULT WriteSample(IMFSinkWriter* writer, DWORD cbData, LONGLONG llSampleTime, 
     IMFSample* pSample;
     DWORD  cbMaxLength, cbCurrentLength;
     BYTE  *pbBuffer;
-    HRESULT hr = MFCreateMemoryBuffer(cbData, &pMediaBuffer);
-    THROW_ON_FAIL(hr);
-    hr = pMediaBuffer->Lock(&pbBuffer, &cbMaxLength, &cbCurrentLength);
-    THROW_ON_FAIL(hr);
-    hr = memcpy_s(pbBuffer, cbData, buff, cbData);
-    THROW_ON_FAIL(hr);
-    //copy your array to pbBuffer (or have the frames come in to this location in the first place)
-    hr = pMediaBuffer->Unlock();
-    THROW_ON_FAIL(hr);
-    hr = pMediaBuffer->SetCurrentLength(cbData);
-    THROW_ON_FAIL(hr);
-    hr = MFCreateSample(&pSample);
-    THROW_ON_FAIL(hr);
-    hr = pSample->AddBuffer(pMediaBuffer);
-    THROW_ON_FAIL(hr);
-    hr = pSample->SetSampleDuration(llSampleDuration);
-    THROW_ON_FAIL(hr);
-    hr = pSample->SetSampleTime(llSampleTime);
-    THROW_ON_FAIL(hr);
-    hr = writer->WriteSample(0, pSample);
-    THROW_ON_FAIL(hr);
-    SafeRelease(&pMediaBuffer);
-    SafeRelease(&pSample);
+    try {
+        HRESULT hr = MFCreateMemoryBuffer(cbData, &pMediaBuffer);
+        THROW_ON_FAIL(hr);
+        hr = pMediaBuffer->Lock(&pbBuffer, &cbMaxLength, &cbCurrentLength);
+        THROW_ON_FAIL(hr);
+        hr = memcpy_s(pbBuffer, cbData, buff, cbData);
+        THROW_ON_FAIL(hr);
+        //copy your array to pbBuffer (or have the frames come in to this location in the first place)
+        hr = pMediaBuffer->Unlock();
+        THROW_ON_FAIL(hr);
+        hr = pMediaBuffer->SetCurrentLength(cbData);
+        THROW_ON_FAIL(hr);
+        hr = MFCreateSample(&pSample);
+        THROW_ON_FAIL(hr);
+        hr = pSample->AddBuffer(pMediaBuffer);
+        THROW_ON_FAIL(hr);
+        hr = pSample->SetSampleDuration(llSampleDuration);
+        THROW_ON_FAIL(hr);
+        hr = pSample->SetSampleTime(llSampleTime);
+        THROW_ON_FAIL(hr);
+        hr = writer->WriteSample(0, pSample);
+        THROW_ON_FAIL(hr);
+        SafeRelease(&pMediaBuffer);
+        SafeRelease(&pSample);
+    }
+    catch(exception){
+        SafeRelease(&pMediaBuffer);
+        SafeRelease(&pSample);
+        throw;
+    }
+   
 }
 
 STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
