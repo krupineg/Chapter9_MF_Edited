@@ -23,7 +23,7 @@ class SampleGrabberCB : public IMFSampleGrabberSinkCallback
         GUID subtype = GetSubtype(pTypeIn);
         hr = inTypeCopy->SetGUID(MF_MT_SUBTYPE, subtype);
         THROW_ON_FAIL(hr);
-        hr = CopyVideoType(pTypeIn, inTypeCopy);
+        hr = CopyType(pTypeIn, inTypeCopy);
         THROW_ON_FAIL(hr);
         DWORD *sink_stream = NULL;
         hr = ConfigureEncoder(inTypeCopy, pTypeOut, m_pWriter);

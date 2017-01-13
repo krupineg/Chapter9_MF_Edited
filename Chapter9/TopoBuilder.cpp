@@ -49,7 +49,7 @@ HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_typ
         THROW_ON_FAIL(hr);
         DebugInfo(DetectSubtype(minorType));
         if (minorType == neededInputType) {
-            hr = CopyVideoType(in_media_type, inputType);
+            hr = CopyType(in_media_type, inputType);
             THROW_ON_FAIL(hr);
             hr = transform->SetInputType(0, inputType, 0);
             THROW_ON_FAIL(hr);
@@ -75,7 +75,7 @@ HRESULT negotiateOutputType(IMFTransform * transform, GUID out_video_format, IMF
         THROW_ON_FAIL(hr);
         
         if (minorType == out_video_format) {
-            hr = CopyVideoType(in_media_type, outputType);           
+            hr = CopyType(in_media_type, outputType);
             THROW_ON_FAIL(hr);
             hr = transform->SetOutputType(0, outputType, 0);
             THROW_ON_FAIL(hr);
@@ -303,7 +303,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
     THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
     THROW_ON_FAIL(hr);
-    hr = CopyVideoType(in_mf_media_type, out_mf_media_type);
+    hr = CopyType(in_mf_media_type, out_mf_media_type);
     if (transform != NULL) {
         CComPtr<IMFMediaType> transformMediaType;
         hr = transform->GetOutputCurrentType(0, &transformMediaType);
