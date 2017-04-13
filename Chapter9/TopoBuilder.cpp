@@ -319,7 +319,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
 
         hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     }
-    hr = SampleGrabberCB::CreateInstance(L"A", &sampleGrabber);
+    hr = SampleGrabberCB::CreateTimingInstance(L"A", &sampleGrabber);
 
   
 
@@ -626,7 +626,7 @@ HRESULT CTopoBuilder::CreateSourceStreamNode(
     CComPtr<IMFTopologyNode> grabberNode = NULL;
     hr = MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &grabberNode);
     SampleGrabberCB* sampleGrabber2 = NULL;
-    SampleGrabberCB::CreateInstance(L"inner", &sampleGrabber2);
+    SampleGrabberCB::CreateTimingInstance(L"inner", &sampleGrabber2);
     CComPtr<IMFActivate>pSinkActivate = NULL;
     CComPtr<IMFMediaType>pType = GetMediaType(pStreamDescriptor);
     THROW_ON_FAIL(MFCreateSampleGrabberSinkActivate(pType, sampleGrabber2, &pSinkActivate));

@@ -1,7 +1,8 @@
 #include "SampleGrabberCB.h"
-HRESULT SampleGrabberCB::CreateInstance(std::wstring name, SampleGrabberCB **ppCB)
+#include "Wmcontainer.h"
+HRESULT SampleGrabberCB::CreateTimingInstance(std::wstring name, SampleGrabberCB **ppCB)
 {
-    *ppCB = new (std::nothrow) SampleGrabberCB(name);
+    *ppCB = new (std::nothrow) TimingSampleGrabber(name);
 
     if (ppCB == NULL)
     {
@@ -133,9 +134,9 @@ HRESULT WriteSample(IMFSinkWriter* writer, DWORD cbData, LONGLONG llSampleTime, 
         SafeRelease(&pMediaBuffer);
         SafeRelease(&pSample);
         throw;
-    }
-   
+    }   
 }
+
 STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
     LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
     DWORD dwSampleSize)
@@ -144,12 +145,7 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
     if (!stopped) {
         unsigned __int64 time;
         QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&time));
-        DebugLog(L"====");
-        DebugLog(_name);
-        DebugLongLong(L"Sample: index ", count);
-        DebugLongLong(L"Sample timestamp ", llSampleTime);
-        DebugLongLong(L"Sample qpc time ", time);
-        DebugLog(L"====");
+        hr = ProcessSampleImpl(guidMajorMediaType, dwSampleFlags, llSampleTime, llSampleDuration, pSampleBuffer, dwSampleSize, time);
         count++;
     }
     // Display information about the sample.
@@ -159,7 +155,7 @@ STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD 
 
 void SampleGrabberCB::Stop() {
     stopped = true;
-
+    THROW_ON_FAIL(StopImpl());
 }
 
 STDMETHODIMP SampleGrabberCB::OnShutdown()
@@ -265,6 +261,47 @@ HRESULT SampleGrabberCB::GetPresentationClock(IMFPresentationClock** ppPresentat
 //
 HRESULT SampleGrabberCB::Shutdown(void)
 {
+    return ShutdownImpl();
+}
+
+HRESULT TimingSampleGrabber::StopImpl() {
     return S_OK;
 }
 
+HRESULT TimingSampleGrabber::StartImpl() {
+    return S_OK;
+}
+
+HRESULT TimingSampleGrabber::ShutdownImpl() {
+    return S_OK;
+}
+
+HRESULT TimingSampleGrabber::ProcessSampleImpl(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
+    LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
+    DWORD dwSampleSize, unsigned __int64 time) {
+    DebugLog(L"====");
+    DebugLog(_name);
+    DebugLongLong(L"Sample: index ", count);
+    DebugLongLong(L"Sample timestamp ", llSampleTime);
+    DebugLongLong(L"Sample qpc time ", time);
+    DebugLog(L"====");
+    return S_OK;
+}
+
+HRESULT ASFSampleGrabber::StopImpl() {
+    return _sink->Shutdown();
+}
+
+HRESULT ASFSampleGrabber::StartImpl() {
+    return S_OK;
+}
+
+HRESULT ASFSampleGrabber::ShutdownImpl() {
+    return S_OK;
+}
+
+HRESULT ASFSampleGrabber::ProcessSampleImpl(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
+    LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
+    DWORD dwSampleSize, unsigned __int64 time) {   
+    return S_OK;
+}

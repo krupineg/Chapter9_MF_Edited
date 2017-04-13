@@ -2,14 +2,17 @@
 #include "Common.h"
 
 #include <mfreadwrite.h>
-
+#include <mfidl.h>
 class SampleGrabberCB : public IMFSampleGrabberSinkCallback, IMFMediaSink
 {
+protected:
     bool stopped;
     std::wstring _name;
     long m_cRef;
     long count;
     IMFSinkWriter *m_pWriter = NULL;
+    IMFMediaSink*  _sink;
+
     SampleGrabberCB(std::wstring name) :
         m_cRef(1),
         stopped(false), 
@@ -35,9 +38,15 @@ class SampleGrabberCB : public IMFSampleGrabberSinkCallback, IMFMediaSink
         return hr;
     }
     CRITICAL_SECTION        m_critsec;
-
+   
 public:
-    static HRESULT CreateInstance(std::wstring name, SampleGrabberCB **ppCB);
+    static HRESULT CreateTimingInstance(std::wstring name, SampleGrabberCB **ppCB);
+    virtual HRESULT StopImpl() = 0;
+    virtual HRESULT ShutdownImpl() = 0;
+    virtual HRESULT StartImpl() = 0;
+    virtual HRESULT ProcessSampleImpl(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
+        LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
+        DWORD dwSampleSize, unsigned __int64 time) = 0;
     void Stop();
     // IUnknown methods
     STDMETHODIMP QueryInterface(REFIID iid, void** ppv);
@@ -66,4 +75,34 @@ public:
         LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
         DWORD dwSampleSize);
     STDMETHODIMP OnShutdown();
+};
+
+class TimingSampleGrabber : public SampleGrabberCB {
+public:
+    TimingSampleGrabber(std::wstring name) : SampleGrabberCB (name){        
+    }   
+    HRESULT StopImpl();
+    HRESULT ShutdownImpl();
+    HRESULT StartImpl();
+    HRESULT ProcessSampleImpl(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
+        LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
+        DWORD dwSampleSize, unsigned __int64 time);
+};
+
+class ASFSampleGrabber : public SampleGrabberCB {
+protected:
+    IMFByteStream* _byteStream;
+public:
+    ASFSampleGrabber(IMFByteStream* byteStream, std::wstring name)
+        : SampleGrabberCB(name), _byteStream(byteStream)
+    {
+        
+    }
+
+    HRESULT StopImpl();
+    HRESULT ShutdownImpl();
+    HRESULT StartImpl();
+    HRESULT ProcessSampleImpl(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
+        LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
+        DWORD dwSampleSize, unsigned __int64 time);
 };
