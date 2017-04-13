@@ -68,7 +68,7 @@ HRESULT CPlayer::Invoke(IMFAsyncResult* pAsyncResult)
         {
             m_topoBuilder.AfterSessionClose(m_pSession);
             SetEvent(m_closeCompleteEvent);
-        }
+        }       
         else
         {
             // If this is not the final event, tell the Media Session that this player is 
@@ -125,7 +125,6 @@ HRESULT CPlayer::ProcessEvent(CComPtr<IMFMediaEvent>& mediaEvent)
             hr = hrStatus;
             break;
         }
-
         if (eventType == MESessionTopologySet) {
             DebugInfo(L"Topology resolved and set on the media session.\n");
         }
@@ -694,7 +693,7 @@ HRESULT CPlayer::DetermineDuration(void)
         {
             hr = pTopology->GetNode(nodeIndex++, &pTopoNode);
             BREAK_ON_FAIL(hr);
-
+            
             hr = pTopoNode->GetNodeType(&nodeType);
             BREAK_ON_FAIL(hr);
 

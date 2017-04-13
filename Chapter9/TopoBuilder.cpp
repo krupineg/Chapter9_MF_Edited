@@ -319,9 +319,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
 
         hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     }
-    else {
-        hr = SampleGrabberCB::CreateInstance(filePath, in_mf_media_type, out_mf_media_type, &sampleGrabber);
-    }
+    hr = SampleGrabberCB::CreateInstance(L"A", &sampleGrabber);
 
   
 
@@ -375,6 +373,11 @@ HRESULT CTopoBuilder::CreateMediaSource(PCWSTR sURL)
 
 HRESULT CTopoBuilder::CreateMediaSource()
 {
+    if (m_pSource != nullptr) {
+        m_pSource->Shutdown();
+        m_pSource.Release();
+        m_pSource = nullptr;
+    }
     IMFActivate **ppDevices;
     UINT32 count;
     HRESULT hr = S_OK;
@@ -589,28 +592,53 @@ HRESULT CTopoBuilder::CreateSourceStreamNode(
     CComPtr<IMFTopologyNode> &pNode)
 {
     HRESULT hr = S_OK;
+    pNode = NULL;
+    // Create the tee node
+    hr = MFCreateTopologyNode(MF_TOPOLOGY_TEE_NODE, &pNode);
+    THROW_ON_FAIL(hr);
 
     THROW_ON_NULL(pPresDescriptor, E_POINTER);
     THROW_ON_NULL(pStreamDescriptor, E_POINTER);
-
+    CComPtr<IMFTopologyNode> pNode1 = NULL;
     // Create the topology node, indicating that it must be a source node.
-    hr = MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &pNode);
+    hr = MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &pNode1);
     THROW_ON_FAIL(hr);
 
     // Associate the node with the source by passing in a pointer to the media source,
     // and indicating that it is the source
-    hr = pNode->SetUnknown(MF_TOPONODE_SOURCE, m_pSource);
+    hr = pNode1->SetUnknown(MF_TOPONODE_SOURCE, m_pSource);
     THROW_ON_FAIL(hr);
 
     // Set the node presentation descriptor attribute of the node by passing 
     // in a pointer to the presentation descriptor
-    hr = pNode->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pPresDescriptor);
+    hr = pNode1->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pPresDescriptor);
     THROW_ON_FAIL(hr);
 
     // Set the node stream descriptor attribute by passing in a pointer to the stream
     // descriptor
-    hr = pNode->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, pStreamDescriptor);
+    hr = pNode1->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, pStreamDescriptor);
     THROW_ON_FAIL(hr);   
+    m_pTopology->AddNode(pNode1);
+
+    hr = pNode1->ConnectOutput(0, pNode, 0);
+    THROW_ON_FAIL(hr);
+
+    CComPtr<IMFTopologyNode> grabberNode = NULL;
+    hr = MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &grabberNode);
+    SampleGrabberCB* sampleGrabber2 = NULL;
+    SampleGrabberCB::CreateInstance(L"inner", &sampleGrabber2);
+    CComPtr<IMFActivate>pSinkActivate = NULL;
+    CComPtr<IMFMediaType>pType = GetMediaType(pStreamDescriptor);
+    THROW_ON_FAIL(MFCreateSampleGrabberSinkActivate(pType, sampleGrabber2, &pSinkActivate));
+    // To run as fast as possible, set this attribute (requires Windows 7):
+    THROW_ON_FAIL(pSinkActivate->SetUINT32(MF_SAMPLEGRABBERSINK_IGNORE_CLOCK, TRUE));
+    hr = grabberNode->SetObject(pSinkActivate);
+    THROW_ON_FAIL(hr);
+    m_pTopology->AddNode(grabberNode);
+
+    hr = pNode->ConnectOutput(1, grabberNode, 0);
+    THROW_ON_FAIL(hr);
+
 
     return hr;
 }
@@ -716,6 +744,7 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
 {
     HRESULT hr = S_OK;
     CComPtr<IMFTopologyNode> output_node;
+    CComPtr<IMFTopologyNode> output_node2;
     CComPtr<IMFTopologyNode> encoder_node;
     CComPtr<IMFTopologyNode> pTeeNode;
     CComPtr<IMFStreamSink> stream_sink;
@@ -723,6 +752,8 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
     DWORD sink_count;
     
     hr = MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &output_node);
+    THROW_ON_FAIL(hr);
+    hr = MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &output_node2);
     THROW_ON_FAIL(hr);
     if (m_Sink) {
         hr = m_Sink->GetStreamSinkCount(&sink_count);
@@ -739,12 +770,14 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
         THROW_ON_FAIL(MFCreateSampleGrabberSinkActivate(pType, sampleGrabber, &pSinkActivate));
         // To run as fast as possible, set this attribute (requires Windows 7):
         THROW_ON_FAIL(pSinkActivate->SetUINT32(MF_SAMPLEGRABBERSINK_IGNORE_CLOCK, TRUE));
-        hr = output_node->SetObject(pSinkActivate);
+        hr = output_node2->SetObject(pSinkActivate);
         THROW_ON_FAIL(hr);
    }
    
     THROW_ON_FAIL(hr);
     hr = m_pTopology->AddNode(output_node);
+    THROW_ON_FAIL(hr);
+    hr = m_pTopology->AddNode(output_node2);
     THROW_ON_FAIL(hr);
     // create the topology Tee node
     hr = MFCreateTopologyNode(MF_TOPOLOGY_TEE_NODE, &pTeeNode);
@@ -757,7 +790,8 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
     THROW_ON_FAIL(hr);
     hr = pTeeNode->ConnectOutput(0, output_node, 0);
     THROW_ON_FAIL(hr);
-
+    hr = pTeeNode->ConnectOutput(1, output_node2, 0);
+    THROW_ON_FAIL(hr);
     // if a renderer node was created and passed in, add it to the topology
     if (pRendererNode != NULL)
     {
@@ -766,7 +800,7 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
         THROW_ON_FAIL(hr);
 
         // connect the second Tee node output to the renderer sink node
-        hr = pTeeNode->ConnectOutput(1, pRendererNode, 0);
+        hr = pTeeNode->ConnectOutput(2, pRendererNode, 0);
         THROW_ON_FAIL(hr);
     }
 

@@ -18,6 +18,8 @@ void DebugGuid(std::wstring pref, GUID guid) {
     strstream << pref;
     strstream << guidToString(guid) << L"\n";
     strng = strstream.str();
+    strstream.str(L"");
+    strstream.clear();
     OutputDebugStringW(strng.c_str());
 }
 
@@ -26,6 +28,8 @@ void DebugLongLong(std::wstring pref, LONGLONG anything) {
     std::wstringstream strstream;
     strstream << L"[DEBUG] " << pref << anything << L"\n";
     strng = strstream.str();
+    strstream.str(L"");
+    strstream.clear();
     OutputDebugStringW(strng.c_str());
 }
 
@@ -34,6 +38,8 @@ void DebugInfo(std::wstring info) {
     std::wstringstream strstream;
     strstream << info;
     strng = strstream.str();
+    strstream.str(L"");
+    strstream.clear();
     OutputDebugStringW(strng.c_str());
 }
 
@@ -44,6 +50,8 @@ void DebugLog(std::wstring info) {
     strstream << info;
     strstream << L"\n";
     strng = strstream.str();
+    strstream.str(L"");
+    strstream.clear();
     OutputDebugStringW(strng.c_str());
 }
 
@@ -422,7 +430,7 @@ HRESULT HandleSinkNode(IMFTopologyNode * node, int level) {
 HRESULT UnwrapPartialTopo(IMFTopologyNode * node, int level) {
     MF_TOPOLOGY_TYPE type;
     HRESULT hr = node->GetNodeType(&type);
-    std::wstring strng;
+  /*  std::wstring strng;
     std::wstringstream *strstream = new std::wstringstream();
   
     if (type == MF_TOPOLOGY_SOURCESTREAM_NODE) {
@@ -436,7 +444,7 @@ HRESULT UnwrapPartialTopo(IMFTopologyNode * node, int level) {
     }
     if (type == MF_TOPOLOGY_TRANSFORM_NODE) {
         HandleTransformNode(node, level);
-    }
+    }*/
     return hr;
 }
 

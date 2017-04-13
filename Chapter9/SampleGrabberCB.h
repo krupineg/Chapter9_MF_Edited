@@ -3,33 +3,19 @@
 
 #include <mfreadwrite.h>
 
-class SampleGrabberCB : public IMFSampleGrabberSinkCallback
+class SampleGrabberCB : public IMFSampleGrabberSinkCallback, IMFMediaSink
 {
     bool stopped;
+    std::wstring _name;
     long m_cRef;
-    IMFSinkWriter           *m_pWriter = NULL;
-    SampleGrabberCB(LPCWSTR filePath, IMFMediaType * pTypeIn, IMFMediaType * pTypeOut) : m_cRef(1), stopped(false) {
-        HRESULT hr = MFCreateSinkWriterFromURL(filePath,
-            NULL,
-            NULL,
-            &m_pWriter);
-        THROW_ON_FAIL(hr);
-        CComPtr<IMFMediaType> inTypeCopy = NULL;
-        hr = MFCreateMediaType(&inTypeCopy);
-        THROW_ON_FAIL(hr);
-        hr = inTypeCopy->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-        THROW_ON_FAIL(hr);
+    long count;
+    IMFSinkWriter *m_pWriter = NULL;
+    SampleGrabberCB(std::wstring name) :
+        m_cRef(1),
+        stopped(false), 
+        _name(name), 
+        count(0){
         
-        GUID subtype = GetSubtype(pTypeIn);
-        hr = inTypeCopy->SetGUID(MF_MT_SUBTYPE, subtype);
-        THROW_ON_FAIL(hr);
-        hr = CopyType(pTypeIn, inTypeCopy);
-        THROW_ON_FAIL(hr);
-        DWORD *sink_stream = NULL;
-        hr = ConfigureEncoder(inTypeCopy, pTypeOut, m_pWriter);
-        THROW_ON_FAIL(hr);
-        hr = m_pWriter->BeginWriting();
-        THROW_ON_FAIL(hr);
     }
     const UINT32 TARGET_BIT_RATE = 240 * 1000;
     HRESULT ConfigureEncoder(
@@ -51,7 +37,7 @@ class SampleGrabberCB : public IMFSampleGrabberSinkCallback
     CRITICAL_SECTION        m_critsec;
 
 public:
-    static HRESULT CreateInstance(LPCWSTR path, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB);
+    static HRESULT CreateInstance(std::wstring name, SampleGrabberCB **ppCB);
     void Stop();
     // IUnknown methods
     STDMETHODIMP QueryInterface(REFIID iid, void** ppv);
@@ -64,7 +50,16 @@ public:
     STDMETHODIMP OnClockPause(MFTIME hnsSystemTime);
     STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime);
     STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate);
-
+    // IMFMediaSink interface implementation
+    STDMETHODIMP GetCharacteristics(DWORD *pdwCharacteristics);
+    STDMETHODIMP AddStreamSink(DWORD dwStreamSinkIdentifier, IMFMediaType* pMediaType, IMFStreamSink** ppStreamSink);
+    STDMETHODIMP RemoveStreamSink(DWORD dwStreamSinkIdentifier);
+    STDMETHODIMP GetStreamSinkCount(DWORD* pcStreamSinkCount);
+    STDMETHODIMP GetStreamSinkByIndex(DWORD dwIndex, IMFStreamSink** ppStreamSink);
+    STDMETHODIMP GetStreamSinkById(DWORD dwStreamSinkIdentifier, IMFStreamSink** ppStreamSink);
+    STDMETHODIMP SetPresentationClock(IMFPresentationClock* pPresentationClock);
+    STDMETHODIMP GetPresentationClock(IMFPresentationClock** ppPresentationClock);
+    STDMETHODIMP Shutdown(void);
     // IMFSampleGrabberSinkCallback methods
     STDMETHODIMP OnSetPresentationClock(IMFPresentationClock* pClock);
     STDMETHODIMP OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags,

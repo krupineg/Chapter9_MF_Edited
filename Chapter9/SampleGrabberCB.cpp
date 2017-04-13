@@ -1,7 +1,7 @@
 #include "SampleGrabberCB.h"
-HRESULT SampleGrabberCB::CreateInstance(LPCWSTR path, IMFMediaType *pTypeIn, IMFMediaType *pTypeOut, SampleGrabberCB **ppCB)
+HRESULT SampleGrabberCB::CreateInstance(std::wstring name, SampleGrabberCB **ppCB)
 {
-    *ppCB = new (std::nothrow) SampleGrabberCB(path, pTypeIn, pTypeOut);
+    *ppCB = new (std::nothrow) SampleGrabberCB(name);
 
     if (ppCB == NULL)
     {
@@ -12,13 +12,36 @@ HRESULT SampleGrabberCB::CreateInstance(LPCWSTR path, IMFMediaType *pTypeIn, IMF
 
 STDMETHODIMP SampleGrabberCB::QueryInterface(REFIID riid, void** ppv)
 {
-    static const QITAB qit[] =
+
+    HRESULT hr = S_OK;
+
+    if (ppv == NULL)
     {
-        QITABENT(SampleGrabberCB, IMFSampleGrabberSinkCallback),
-        QITABENT(SampleGrabberCB, IMFClockStateSink),
-        { 0 }
-    };
-    return QISearch(this, qit, riid, ppv);
+        return E_POINTER;
+    }
+
+    if (riid == IID_IUnknown)
+    {
+        *ppv = static_cast<IUnknown*>(static_cast<IMFMediaSink*>(this));
+    }
+    else if (riid == IID_IMFMediaSink)
+    {
+        *ppv = static_cast<IMFMediaSink*>(this);
+    }
+    else if (riid == IID_IMFClockStateSink)
+    {
+        *ppv = static_cast<IMFClockStateSink*>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        hr = E_NOINTERFACE;
+    }
+
+    if (SUCCEEDED(hr))
+        AddRef();
+
+    return hr;
 }
 
 STDMETHODIMP_(ULONG) SampleGrabberCB::AddRef()
@@ -49,7 +72,7 @@ STDMETHODIMP SampleGrabberCB::OnClockStart(MFTIME hnsSystemTime, LONGLONG llCloc
 
 STDMETHODIMP SampleGrabberCB::OnClockStop(MFTIME hnsSystemTime)
 {
-   
+
     return S_OK;
 }
 
@@ -113,39 +136,135 @@ HRESULT WriteSample(IMFSinkWriter* writer, DWORD cbData, LONGLONG llSampleTime, 
     }
    
 }
-
 STDMETHODIMP SampleGrabberCB::OnProcessSample(REFGUID guidMajorMediaType, DWORD dwSampleFlags,
     LONGLONG llSampleTime, LONGLONG llSampleDuration, const BYTE * pSampleBuffer,
     DWORD dwSampleSize)
 {
     HRESULT hr = S_OK;
-    if (!stopped && m_pWriter) {
-        if (timeOffset == 0) {
-            timeOffset = llSampleTime;
-        }
-        llSampleTime = llSampleTime - timeOffset;
-        DebugLongLong(L"Sample: start ", llSampleTime);
-        hr = WriteSample(m_pWriter, dwSampleSize, llSampleTime, llSampleDuration, pSampleBuffer);
-        THROW_ON_FAIL(hr);
+    if (!stopped) {
+        unsigned __int64 time;
+        QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&time));
+        DebugLog(L"====");
+        DebugLog(_name);
+        DebugLongLong(L"Sample: index ", count);
+        DebugLongLong(L"Sample timestamp ", llSampleTime);
+        DebugLongLong(L"Sample qpc time ", time);
+        DebugLog(L"====");
+        count++;
     }
     // Display information about the sample.
-   
+
     return hr;
 }
 
 void SampleGrabberCB::Stop() {
     stopped = true;
-    if (m_pWriter)
-    {
-        HRESULT hr = m_pWriter->Flush(0);
-        THROW_ON_FAIL(hr);
-        hr = m_pWriter->Finalize();
-        THROW_ON_FAIL(hr);
-    }
-    SafeRelease(&m_pWriter);
+
 }
 
 STDMETHODIMP SampleGrabberCB::OnShutdown()
-{    
+{
     return S_OK;
 }
+
+
+
+//
+// Get the characteristics of the sink
+//
+HRESULT SampleGrabberCB::GetCharacteristics(DWORD* pdwCharacteristics)
+{
+    if (pdwCharacteristics == NULL)
+        return E_POINTER;
+
+    // rateless sink with a fixed number of streams
+    *pdwCharacteristics = MEDIASINK_RATELESS | MEDIASINK_FIXED_STREAMS;
+
+    return S_OK;
+}
+
+
+// 
+// Add a new stream to the sink - not supported, since the sink supports a fixed number of 
+// streams.
+//
+HRESULT SampleGrabberCB::AddStreamSink(
+    DWORD dwStreamSinkIdentifier,   // new stream ID
+    IMFMediaType* pMediaType,       // media type of the new stream - can be NULL
+    IMFStreamSink** ppStreamSink)   // resulting stream
+{
+    return MF_E_STREAMSINKS_FIXED;
+}
+
+
+//
+// Remove/delete a stream from the sink, identified by stream ID.  Not implemented since the
+// sink supports a fixed number of streams.
+//
+HRESULT SampleGrabberCB::RemoveStreamSink(DWORD dwStreamSinkIdentifier)
+{
+    return MF_E_STREAMSINKS_FIXED;
+}
+
+
+
+//
+// Get the number of stream sinks currently registered with the sink
+//
+HRESULT SampleGrabberCB::GetStreamSinkCount(DWORD* pcStreamSinkCount)
+{
+    HRESULT hr = S_OK;
+    *pcStreamSinkCount = 1;
+    return hr;
+}
+
+
+
+//
+// Get stream by index
+//
+HRESULT SampleGrabberCB::GetStreamSinkByIndex(DWORD dwIndex, IMFStreamSink** ppStreamSink)
+{
+    HRESULT hr = MF_E_SINK_NO_STREAMS;
+    return hr;
+}
+
+
+
+//
+// Get stream by sink ID
+//
+HRESULT SampleGrabberCB::GetStreamSinkById(DWORD dwStreamSinkIdentifier, IMFStreamSink** ppStreamSink)
+{
+    HRESULT hr = MF_E_SINK_NO_STREAMS;
+    return hr;
+}
+
+
+
+//
+// Set the presentation clock on the sink
+//
+HRESULT SampleGrabberCB::SetPresentationClock(IMFPresentationClock* pPresentationClock)
+{
+    return S_OK;
+}
+
+
+//
+// Get the current presentation clock
+//
+HRESULT SampleGrabberCB::GetPresentationClock(IMFPresentationClock** ppPresentationClock)
+{
+    return MF_E_NO_CLOCK;
+}
+
+
+//
+// Shut down the sink
+//
+HRESULT SampleGrabberCB::Shutdown(void)
+{
+    return S_OK;
+}
+
