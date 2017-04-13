@@ -317,7 +317,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
     FormatReader::getInstance().Read(L"out media type for sink", out_mf_media_type);
     if (imfmediasink) {
 
-        hr = MFCreateFMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
+        hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     }
     hr = SampleGrabberCB::CreateTimingInstance(L"A", &sampleGrabber);
 
