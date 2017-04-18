@@ -8,6 +8,13 @@
 
 #define RECEIVE_BUFFER_SIZE  262144
 #define SEND_BUFFER_SIZE 65536
+char HttpResponseHeader[] =
+"HTTP/1.1 200 OK\r\n\
+Content-Type: video/x-ms-asf\r\n\
+Server: Microsoft-HTTPAPI/2.0\r\n\
+Accept-Ranges: none\r\n\
+TransferMode.DLNA.ORG: Streaming\r\n\
+Connection: open\r\n\r\n";
 
 HRESULT CHttpOutputByteStream::CreateInstance(PCSTR host, DWORD requestPort, IMFByteStream** ppByteStream)
 {
@@ -634,10 +641,16 @@ HRESULT CHttpOutputByteStream::InitSocket(DWORD port)
 
         // Receive all the data - it should be a short HTTP GET message requesting data.
         // Ignore the message contents - we will send out data after any request on port
-        //result = recv(m_clientSocket, recvbuf, RECEIVE_BUFFER_SIZE, 0);
+       // result = recv(m_clientSocket, recvbuf, RECEIVE_BUFFER_SIZE, 0);
         
         // send the HTTP response header to notify the client that data is forthcoming
-       
+        result = send(m_clientSocket, (const char*)HttpResponseHeader,
+            (int)strlen(HttpResponseHeader), 0);
+        if (result == SOCKET_ERROR)
+        {
+            hr = HRESULT_FROM_WIN32(WSAGetLastError());
+            break;
+        }
     }
     while(FALSE);
 
