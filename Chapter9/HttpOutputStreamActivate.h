@@ -9,7 +9,7 @@ class CHttpOutputStreamActivate :
     public IMFActivate
 {
     public:
-        CHttpOutputStreamActivate(DWORD requestPort);
+        CHttpOutputStreamActivate(PCSTR host, DWORD requestPort);
         ~CHttpOutputStreamActivate(void);
 
         // IUnknown interface implementation
@@ -67,7 +67,7 @@ class CHttpOutputStreamActivate :
 
     private:
         volatile long m_cRef;        
-
+        PCSTR m_host;
         DWORD m_requestPort;
 };
 

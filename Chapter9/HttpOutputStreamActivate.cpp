@@ -1,10 +1,9 @@
 #include "HttpOutputStreamActivate.h"
 
 
-CHttpOutputStreamActivate::CHttpOutputStreamActivate(DWORD requestPort) :
-    m_cRef(0)
+CHttpOutputStreamActivate::CHttpOutputStreamActivate(PCSTR host, DWORD requestPort) :
+    m_cRef(0), m_host(host), m_requestPort(requestPort)
 {
-    m_requestPort = requestPort;
 }
 
 
@@ -29,7 +28,7 @@ HRESULT CHttpOutputStreamActivate::ActivateObject(REFIID riid, void **ppv)
 
     do
     {
-        hr = CHttpOutputByteStream::CreateInstance(m_requestPort, &pByteStream);
+        hr = CHttpOutputByteStream::CreateInstance(m_host, m_requestPort, &pByteStream);
         BREAK_ON_FAIL(hr);
 
         hr = pByteStream->QueryInterface(riid, ppv);

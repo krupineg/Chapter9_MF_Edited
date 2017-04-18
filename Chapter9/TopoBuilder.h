@@ -49,7 +49,7 @@ class CTopoBuilder
         bool m_addNetworkSink;
         HRESULT CreateMediaSource();
         HRESULT CreateMediaSource(PCWSTR sURL);
-        HRESULT CreateNetworkSink(DWORD requestPort);
+        HRESULT CreateNetworkSink(PCSTR host, DWORD requestPort, IMFMediaType* output_type);
         HRESULT CreateFileSink(PCWSTR filePath, IMFMediaType * out_mf_media_type);
 		HRESULT CreateTeeMp4Twig(
 			IMFPresentationDescriptor* pPresDescriptor, 
@@ -74,8 +74,7 @@ class CTopoBuilder
             IMFTopologyNode* pSourceNode,
             IMFTopologyNode** ppOutputNode);
 
-        HRESULT CreateTeeNetworkTwig(IMFStreamDescriptor* pStreamDescriptor, 
-            IMFTopologyNode* pRendererNode, IMFTopologyNode** ppTeeNode);
+        HRESULT CreateTeeNetworkTwig(DWORD stream, IMFTopologyNode** node);
 
 };
 

@@ -9,17 +9,7 @@
 #define RECEIVE_BUFFER_SIZE  262144
 #define SEND_BUFFER_SIZE 65536
 
-
-char HttpResponseHeader[] = 
-    "HTTP/1.1 200 OK\r\n\
-Content-Type: video/x-ms-asf\r\n\
-Server: Microsoft-HTTPAPI/2.0\r\n\
-Accept-Ranges: none\r\n\
-TransferMode.DLNA.ORG: Streaming\r\n\
-Connection: open\r\n\r\n";
-
-
-HRESULT CHttpOutputByteStream::CreateInstance(DWORD requestPort, IMFByteStream** ppByteStream)
+HRESULT CHttpOutputByteStream::CreateInstance(PCSTR host, DWORD requestPort, IMFByteStream** ppByteStream)
 {
     HRESULT hr = S_OK;
     CHttpOutputByteStream* pByteStream = NULL;
@@ -47,7 +37,7 @@ HRESULT CHttpOutputByteStream::CreateInstance(DWORD requestPort, IMFByteStream**
         BREAK_ON_NULL(pByteStream->m_pOutputBuffer, E_OUTOFMEMORY);
 
         pByteStream->m_outputPort = requestPort;
-
+        pByteStream->m_host = host;
         // allocate a special worker thread for the blocking synchronous MFT operations
         hr = MFAllocateWorkQueue(&(pByteStream->m_netWorkQueue));
         BREAK_ON_FAIL(hr);
@@ -582,13 +572,13 @@ HRESULT CHttpOutputByteStream::InitSocket(DWORD port)
         ZeroMemory(&hints, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
-        hints.ai_protocol = IPPROTO_IP;
+        hints.ai_protocol = IPPROTO_TCP;
         hints.ai_flags = AI_PASSIVE;
 
         sprintf_s(portStr, 8, "%d", port);
 
         // Resolve the server address and port
-        result = getaddrinfo(NULL, portStr, &hints, &resultAddress);
+        result = getaddrinfo(m_host, portStr, &hints, &resultAddress);
         if ( result != 0 )
         {
             hr = HRESULT_FROM_WIN32(WSAGetLastError());
@@ -596,7 +586,7 @@ HRESULT CHttpOutputByteStream::InitSocket(DWORD port)
         }
 
         // Create a SOCKET for connecting to server
-        m_listenSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, 
+        m_listenSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
             WSA_FLAG_OVERLAPPED);
         if (m_listenSocket == INVALID_SOCKET)
         {
@@ -644,16 +634,10 @@ HRESULT CHttpOutputByteStream::InitSocket(DWORD port)
 
         // Receive all the data - it should be a short HTTP GET message requesting data.
         // Ignore the message contents - we will send out data after any request on port
-        result = recv(m_clientSocket, recvbuf, RECEIVE_BUFFER_SIZE, 0);
+        //result = recv(m_clientSocket, recvbuf, RECEIVE_BUFFER_SIZE, 0);
         
         // send the HTTP response header to notify the client that data is forthcoming
-        result = send( m_clientSocket, (const char*)HttpResponseHeader, 
-            (int)strlen(HttpResponseHeader), 0 );
-        if(result == SOCKET_ERROR)
-        {
-            hr = HRESULT_FROM_WIN32(WSAGetLastError());
-            break;
-        }
+       
     }
     while(FALSE);
 

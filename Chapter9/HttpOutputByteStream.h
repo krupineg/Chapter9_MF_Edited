@@ -11,7 +11,7 @@ class CHttpOutputByteStream :
     public IMFAsyncCallback
 {
     public:
-        static HRESULT CreateInstance(DWORD requestPort, IMFByteStream** ppByteStream);
+        static HRESULT CreateInstance(PCSTR host, DWORD requestPort, IMFByteStream** ppByteStream);
         
         // IUnknown interface implementation
         STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject);
@@ -50,7 +50,7 @@ class CHttpOutputByteStream :
         SOCKET m_clientSocket;
         SOCKET m_listenSocket;
         DWORD m_outputPort;
-
+        PCSTR m_host;
         HANDLE m_testThread;
         
         DWORD m_netWorkQueue;
