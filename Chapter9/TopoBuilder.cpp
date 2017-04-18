@@ -482,8 +482,14 @@ HRESULT CTopoBuilder::AfterSessionClose(IMFMediaSession * m_pSession) {
         hr = m_pSource->Shutdown();
         THROW_ON_FAIL(hr);
         m_pSource.Release();
+        m_pSource = NULL;
     }
-  
+    if (m_pNetworkSinkActivate) {
+        hr = m_pNetworkSinkActivate->ShutdownObject();
+        THROW_ON_FAIL(hr);
+        m_pNetworkSinkActivate.Release();
+        m_pNetworkSinkActivate = NULL;
+    }
     if (m_pSession) {
         hr = m_pSession->Shutdown();
         THROW_ON_FAIL(hr);
