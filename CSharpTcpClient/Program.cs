@@ -11,7 +11,7 @@ namespace CSharpTcpClient
 {
     class Program
     {
-        public const int PORT = 11000;
+        public const int PORT = 8080;
         public static void Main()
         {
             TcpClient client = null;
@@ -24,12 +24,12 @@ namespace CSharpTcpClient
                 client = new TcpClient(AddressFamily.InterNetwork);
 
 
-                client.Connect(IPAddress.Loopback, PORT);
+                client.Connect("localhost", PORT);
                 Byte[] bytes = new Byte[256];
                 int i;
                 using (var stream = client.GetStream())
                 {
-                    using (var output = new FileStream(@"C:/Users/Public/transferred.mp4", FileMode.Create))
+                    using (var output = new FileStream(@"C:/Users/Public/transferred.asf", FileMode.Create))
                     {
                         while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
                         {
@@ -52,7 +52,7 @@ namespace CSharpTcpClient
 
 
             Console.WriteLine("\nHit enter to continue...");
-            Console.Read();
+            Console.ReadLine();
         }
     }
 }
