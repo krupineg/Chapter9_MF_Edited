@@ -769,6 +769,43 @@ HRESULT CTopoBuilder::CreateOutputNode(
     return hr;
 }
 
+HRESULT CTopoBuilder::CreateAsfNode(IMFMediaType * output_type, IMFTopologyNode** node)
+{
+    CComPtr<IMFTopologyNode> asfNode;
+    CComPtr<IMFASFProfile> pAsfProfile;
+    CComQIPtr<IMFASFContentInfo> pAsfContentInfo;
+
+    CComPtr<IMFActivate> pByteStreamActivate;
+    CComPtr<IMFActivate> pNetSinkActivate;
+    HRESULT hr = MFCreateTopologyNode(MF_TOPOLOGY_TEE_NODE, &asfNode);
+    THROW_ON_FAIL(hr);
+    pByteStreamActivate = new (std::nothrow) TempFileStreamActivate();
+    hr = MFCreateASFProfile(&pAsfProfile);
+    CComPtr<IMFASFStreamConfig> stream;
+    hr = pAsfProfile->CreateStream(output_type, &stream);
+    THROW_ON_FAIL(hr);
+    hr = stream->SetStreamNumber(1);
+    THROW_ON_FAIL(hr);
+    hr = pAsfProfile->SetStream(stream);
+    THROW_ON_FAIL(hr);
+
+    // create the ContentInfo object for the ASF profile
+    hr = MFCreateASFContentInfo(&pAsfContentInfo);
+    THROW_ON_FAIL(hr);
+
+    // set the profile on the content info object
+    hr = pAsfContentInfo->SetProfile(pAsfProfile);
+    THROW_ON_FAIL(hr);
+
+    // create an activator object for an ASF streaming sink
+    hr = MFCreateASFStreamingMediaSinkActivate(pByteStreamActivate, pAsfContentInfo,
+        &pNetSinkActivate);
+    THROW_ON_FAIL(hr);
+    hr = asfNode->SetObject(pNetSinkActivate);
+    THROW_ON_FAIL(hr);
+    *node = asfNode.Detach();
+}
+
 HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescriptor, IMFStreamDescriptor* pStreamDescriptor,
     IMFTopologyNode* pRendererNode, IMFTopologyNode** ppTeeNode)
 {
@@ -838,6 +875,15 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
     THROW_ON_FAIL(hr);
     fuckNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, fuckNode);
     hr = pTeeNode->ConnectOutput(3, fuckNode, 0);
+    THROW_ON_FAIL(hr);
+    //IMFMediaType* inner = GetMediaType(pStreamDescriptor);
+    
+    //IMFMediaType* out_type = ConvertToOutputType(inner);
+    //hr = CreateAsfNode(out_type, &asfNode);
+    THROW_ON_FAIL(hr);
+
+    //asfNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, asfNode);
+    //hr = pTeeNode->ConnectOutput(3, asfNode, 0);
     THROW_ON_FAIL(hr);
     // detach the Tee node and return it as the output node
     *ppTeeNode = pTeeNode.Detach();

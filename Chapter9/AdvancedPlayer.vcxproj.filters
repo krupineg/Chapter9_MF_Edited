@@ -43,6 +43,9 @@
     <ClCompile Include="FormatReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TempFileStreamActivate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -103,6 +106,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="FormatReader.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="TempFileStreamActivate.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
