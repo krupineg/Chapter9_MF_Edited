@@ -9,6 +9,7 @@
 #define IDC_FILEMENU                    109
 #define IDR_MAINFRAME                   128
 #define ID_FILE_OPENFILE                32771
+#define ID_FILE_OPENSOCKET              32772
 #define ID_CONTROL_PLAY                 32774
 #define ID_CONTROL_PAUSE                32775
 #define ID_CONTROL_STOP                 32776

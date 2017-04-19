@@ -32,6 +32,7 @@ BEGIN
     BEGIN
         MENUITEM "&Open Camera for Encode And Render", ID_FILE_OPENCAMERA
         MENUITEM "&Open File for Render",       ID_FILE_OPENFILE
+        MENUITEM "&Open Socket for Render", ID_FILE_OPENSOCKET
         MENUITEM "Open File for Network and Render", ID_FILE_OPENFILEFORNETWORKANDRENDER
         MENUITEM "O&pen File for Network Streaming", ID_FILE_OPENFILEFORNETWORKSTREAMING
         MENUITEM SEPARATOR

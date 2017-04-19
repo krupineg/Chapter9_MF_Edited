@@ -25,6 +25,7 @@ void                OnPaint(HWND hwnd);
 void                OnKeyPress(WPARAM key);
 void                OnOpenFile(HWND parent, bool render, bool network);
 void                OnOpenCamera(HWND parent, bool render);
+void                OnOpenSocket(HWND parent, bool render, bool network);
 void OnTimer(void);
 
 
@@ -111,6 +112,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         else if(LOWORD(wParam) == ID_FILE_OPENFILE)
         {
             OnOpenFile(hwnd, true, false);
+        }
+        else if (LOWORD(wParam) == ID_FILE_OPENSOCKET)
+        {
+            OnOpenSocket(hwnd, true, false);
         }
         else if(LOWORD(wParam) == ID_FILE_OPENFILEFORNETWORKSTREAMING)
         {
@@ -310,6 +315,23 @@ void OnOpenFile(HWND parent, bool render, bool network)
         }
     }
 }
+
+void OnOpenSocket(HWND parent, bool render, bool network)
+{
+    // call the player to actually open the file and build the topology
+    if (g_pPlayer != NULL)
+    {
+        if (render)
+        {
+            g_pPlayer->OpenURL(L"http://localhost:8080", parent, network);
+        }
+        else
+        {
+            g_pPlayer->OpenURL(L"http://localhost:8080", NULL, network);
+        }
+    }
+}
+
 void OnOpenCamera(HWND parent, bool render)
 {
     if (g_pPlayer != NULL)

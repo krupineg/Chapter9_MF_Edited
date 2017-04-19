@@ -35,6 +35,7 @@ class CTopoBuilder
         HRESULT AfterSessionClose(IMFMediaSession * m_pSession);
         HRESULT Finish(IMFMediaSession * m_pSession);
     private:
+        HRESULT CreateAsfNode(IMFMediaType * output_type, IMFTopologyNode** node);
         CComPtr<IMFTopology>                  m_pTopology;     // the topology itself
         CComPtr<IMFMediaSource>               m_pSource;       // the MF source
         CComPtr<IMFVideoDisplayControl>       m_pVideoDisplay; // pointer to the mixer

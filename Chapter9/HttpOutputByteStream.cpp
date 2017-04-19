@@ -644,8 +644,9 @@ HRESULT CHttpOutputByteStream::InitSocket(DWORD port)
        // result = recv(m_clientSocket, recvbuf, RECEIVE_BUFFER_SIZE, 0);
         
         // send the HTTP response header to notify the client that data is forthcoming
-        result = send(m_clientSocket, (const char*)HttpResponseHeader,
-            (int)strlen(HttpResponseHeader), 0);
+
+        // TODO: this line is needed to be recognized by vlc player
+        result = send(m_clientSocket, (const char*)HttpResponseHeader, (int)strlen(HttpResponseHeader), 0);
         if (result == SOCKET_ERROR)
         {
             hr = HRESULT_FROM_WIN32(WSAGetLastError());

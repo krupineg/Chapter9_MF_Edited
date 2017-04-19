@@ -8,6 +8,7 @@
 #include "AviSink.h"
 #include "SampleGrabberCB.h"
 #include "FormatReader.h"
+#include "TempFileStreamActivate.h"
 IMFTransform * CreateSampleTransform() {
     //create color converter
     /*HRESULT hr = DllRegisterServer();
@@ -266,7 +267,7 @@ HRESULT CTopoBuilder::CreateNetworkSink(PCSTR host, DWORD requestPort, IMFMediaT
     THROW_ON_NULL(m_pSource);
 
     // create an HTTP activator for the custom HTTP output byte stream object
-    pByteStreamActivate = new (std::nothrow) CHttpOutputStreamActivate(host, 11000);
+    pByteStreamActivate = new (std::nothrow) CHttpOutputStreamActivate(host, requestPort);
     THROW_ON_NULL(pByteStreamActivate);
         
     // create the presentation descriptor for the source
@@ -367,7 +368,6 @@ HRESULT CTopoBuilder::CreateMediaSource(PCWSTR sURL)
     hr = MFCreateSourceResolver(&pSourceResolver);
     THROW_ON_FAIL(hr);
 
-
     // Use the syncrhonous source resolver to create the media source.
     hr = pSourceResolver->CreateObjectFromURL(
         sURL,                       // URL of the source.
@@ -384,7 +384,6 @@ HRESULT CTopoBuilder::CreateMediaSource(PCWSTR sURL)
     // Get the IMFMediaSource interface from the media source.
     
     m_pSource = pSource;
-
     
    // BREAK_ON_NULL(m_pSource, E_NOINTERFACE);
 
@@ -711,7 +710,6 @@ HRESULT CTopoBuilder::CreateOutputNode(
     hr = in_media_type->GetMajorType(&majorType);
     THROW_ON_FAIL(hr);
 	
-
     if(m_videoHwnd != NULL)
     {
         // Create an IMFActivate controller object for the renderer, based on the media type.
@@ -756,7 +754,7 @@ HRESULT CTopoBuilder::CreateOutputNode(
         THROW_ON_FAIL(hr);
 
         CComPtr<IMFMediaType> out_mf_media_type = ConvertToOutputType(in_media_type);
-        hr = CreateNetworkSink("127.0.0.1", 8080, out_mf_media_type);
+        hr = CreateNetworkSink("localhost", 8080, out_mf_media_type);
         THROW_ON_FAIL(hr);
         CComPtr<IMFTopologyNode> pOldOutput = pOutputNode;
         pOutputNode = NULL;
@@ -812,7 +810,8 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
     HRESULT hr = S_OK;
     CComPtr<IMFTopologyNode> output_node;
     CComPtr<IMFTopologyNode> output_node2;
-    CComPtr<IMFTopologyNode> fuckNode;
+    CComPtr<IMFTopologyNode> networkNode;
+    CComPtr<IMFTopologyNode> asfNode;
     CComPtr<IMFTopologyNode> encoder_node;
     CComPtr<IMFTopologyNode> pTeeNode;
     CComPtr<IMFStreamSink> stream_sink;
@@ -871,10 +870,10 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
         hr = pTeeNode->ConnectOutput(2, pRendererNode, 0);
         THROW_ON_FAIL(hr);
     }
-    hr = CreateTeeNetworkTwig(1, &fuckNode);
+    hr = CreateTeeNetworkTwig(1, &networkNode);
     THROW_ON_FAIL(hr);
-    fuckNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, fuckNode);
-    hr = pTeeNode->ConnectOutput(3, fuckNode, 0);
+    networkNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, networkNode);
+    hr = pTeeNode->ConnectOutput(3, networkNode, 0);
     THROW_ON_FAIL(hr);
     //IMFMediaType* inner = GetMediaType(pStreamDescriptor);
     
@@ -885,6 +884,7 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
     //asfNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, asfNode);
     //hr = pTeeNode->ConnectOutput(3, asfNode, 0);
     THROW_ON_FAIL(hr);
+    
     // detach the Tee node and return it as the output node
     *ppTeeNode = pTeeNode.Detach();
     return hr;

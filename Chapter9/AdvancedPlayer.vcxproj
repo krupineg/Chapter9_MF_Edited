@@ -230,6 +230,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SampleGrabberCB.cpp" />
     <ClCompile Include="SampleTransform.cpp" />
+    <ClCompile Include="TempFileStreamActivate.cpp" />
     <ClCompile Include="TopoBuilder.cpp" />
     <ClCompile Include="VideoSink.cpp" />
     <ClCompile Include="winmain.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SampleGrabberCB.h" />
     <ClInclude Include="SampleTransform.h" />
+    <ClInclude Include="TempFileStreamActivate.h" />
     <ClInclude Include="TopoBuilder.h" />
     <ClInclude Include="VideoSink.h" />
   </ItemGroup>
