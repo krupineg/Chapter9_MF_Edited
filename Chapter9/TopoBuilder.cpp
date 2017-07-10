@@ -51,7 +51,7 @@ HRESULT negotiateInputType(IMFTransform * transform, IMFMediaType * in_media_typ
         if (minorType == neededInputType) {
             hr = CopyType(in_media_type, inputType);
             THROW_ON_FAIL(hr);
-            hr = transform->SetInputType(0, inputType, 0);
+            //hr = transform->SetInputType(0, inputType, 0);
             THROW_ON_FAIL(hr);
             return hr;
         }
@@ -88,14 +88,15 @@ IMFMediaType* ConvertToOutputType(IMFMediaType* in_mf_media_type) {
     hr = out_mf_media_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
     THROW_ON_FAIL(hr);
     hr = out_mf_media_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
-    THROW_ON_FAIL(hr);
+    THROW_ON_FAIL(hr); 
     hr = CopyType(in_mf_media_type, out_mf_media_type);
     return out_mf_media_type.Detach();
 }
 
 IMFTransform* CreateEncoderMft(IMFMediaType * in_media_type, GUID out_type, GUID out_subtype)
 {
-    IMFTransform * pEncoder = FindEncoderTransform(out_type, out_subtype);
+    GUID subtype = GetSubtype(in_media_type);
+    IMFTransform * pEncoder = FindEncoderTransform(subtype, out_type, out_subtype);
     HRESULT hr = S_OK;    
     DWORD inputstreamsCount;
     DWORD outputstreamsCount;
@@ -311,7 +312,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
     if (imfmediasink) {
         CComPtr<IMFStreamSink> stream_sink;
         hr = MFCreateFile(
-            MF_ACCESSMODE_WRITE, MF_OPENMODE_DELETE_IF_EXIST, MF_FILEFLAGS_NONE,
+            MF_ACCESSMODE_WRITE, MF_OPENMODE_FAIL_IF_NOT_EXIST, MF_FILEFLAGS_NONE,
             filePath, &byte_stream);
         THROW_ON_FAIL(hr);
         if (GetSubtype(in_mf_media_type) != MEDIASUBTYPE_H264) {
@@ -338,7 +339,7 @@ HRESULT CTopoBuilder::CreateFileSink(PCWSTR filePath, IMFMediaType * in_mf_media
     FormatReader::getInstance().Read(L"out media type for sink", out_mf_media_type);
     if (imfmediasink) {
 
-        hr = MFCreateMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
+        hr = MFCreateFMPEG4MediaSink(byte_stream, out_mf_media_type, NULL, &m_Sink);
     }
     hr = SampleGrabberCB::CreateTimingInstance(L"A", &sampleGrabber);
 
@@ -578,6 +579,9 @@ HRESULT CTopoBuilder::AddBranchToPartialTopology(
     // Create the topology branch only if the stream is selected - IE if the user wants to play it.
     if (streamSelected)
     {
+
+
+
         // Create a source node for this stream.
         hr = CreateSourceStreamNode(pPresDescriptor, pStreamDescriptor, pSourceNode);
         THROW_ON_FAIL(hr);
@@ -621,7 +625,6 @@ HRESULT CTopoBuilder::CreateSourceStreamNode(
     // Create the tee node
     hr = MFCreateTopologyNode(MF_TOPOLOGY_TEE_NODE, &pNode);
     THROW_ON_FAIL(hr);
-
     THROW_ON_NULL(pPresDescriptor, E_POINTER);
     THROW_ON_NULL(pStreamDescriptor, E_POINTER);
     CComPtr<IMFTopologyNode> pNode1 = NULL;
@@ -709,7 +712,7 @@ HRESULT CTopoBuilder::CreateOutputNode(
 	// Get the major media type (e.g. video or audio)
     hr = in_media_type->GetMajorType(&majorType);
     THROW_ON_FAIL(hr);
-	
+    FormatReader::getInstance().Read(L"in_media_type", in_media_type);
     if(m_videoHwnd != NULL)
     {
         // Create an IMFActivate controller object for the renderer, based on the media type.
@@ -750,7 +753,7 @@ HRESULT CTopoBuilder::CreateOutputNode(
         && majorType == MFMediaType_Video)
     {
        
-        hr = CreateFileSink(L"C:\\Users\\Public\\Encoded2.mp4", in_media_type);
+        hr = CreateFileSink(L"C:\\Users\\Public\\Encoded21.mp4", in_media_type);
         THROW_ON_FAIL(hr);
 
         CComPtr<IMFMediaType> out_mf_media_type = ConvertToOutputType(in_media_type);
@@ -870,11 +873,11 @@ HRESULT CTopoBuilder::CreateTeeMp4Twig(IMFPresentationDescriptor* pPresDescripto
         hr = pTeeNode->ConnectOutput(2, pRendererNode, 0);
         THROW_ON_FAIL(hr);
     }
-    hr = CreateTeeNetworkTwig(1, &networkNode);
-    THROW_ON_FAIL(hr);
-    networkNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, networkNode);
-    hr = pTeeNode->ConnectOutput(3, networkNode, 0);
-    THROW_ON_FAIL(hr);
+    //hr = CreateTeeNetworkTwig(1, &networkNode);
+    //THROW_ON_FAIL(hr);
+    //networkNode = AddEncoderIfNeed(m_pTopology, pStreamDescriptor, networkNode);
+   // hr = pTeeNode->ConnectOutput(3, networkNode, 0);
+   // THROW_ON_FAIL(hr);
     //IMFMediaType* inner = GetMediaType(pStreamDescriptor);
     
     //IMFMediaType* out_type = ConvertToOutputType(inner);

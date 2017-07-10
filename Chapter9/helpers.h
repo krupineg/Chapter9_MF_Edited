@@ -25,7 +25,7 @@ HRESULT NegotiateInputType(IMFTransform * transform, DWORD stream_index, IMFMedi
 HRESULT NegotiateOutputType(IMFTransform * transform, DWORD stream_index, GUID out_format, IMFMediaType * in_media_type);
 IMFMediaType * CreateMediaType(GUID major, GUID minor);
 HRESULT UnwrapPartialTopo(IMFTopologyNode * node, int level);
-IMFTransform* FindEncoderTransform(GUID major, GUID minor);
+IMFTransform* FindEncoderTransform(GUID in, GUID major, GUID minor);
 
 template <class T> void SafeRelease(T **ppT)
 {

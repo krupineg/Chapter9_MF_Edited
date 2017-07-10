@@ -278,7 +278,7 @@ HRESULT IPropertyStore_SetValue(IPropertyStore *pps, REFPROPERTYKEY pkey, UINT32
     return hr;
 }
 
-IMFTransform* FindEncoderTransform(GUID major, GUID minor) {
+IMFTransform* FindEncoderTransform(GUID in, GUID major, GUID minor) {
     UINT32 count = 0;
     IMFActivate **ppActivate = NULL;
     DebugInfo(L"find encoder to " + DetectSubtype(minor));
@@ -488,6 +488,9 @@ IMFMediaType * CreateMediaType(GUID major, GUID minor) {
 HRESULT NegotiateInputType(IMFTransform * transform, DWORD stream_index, IMFMediaType * in_media_type) {
     DebugLog(L"negotiate input type");
     GUID neededInputType = GetSubtype(in_media_type);
+   /* if (neededInputType == MFVideoFormat_I420) {
+        neededInputType = MFVideoFormat_YUY2;
+    }*/
     GUID major = GetMajorType(in_media_type);
     CComPtr<IMFMediaType> copyType = CreateMediaType(major, neededInputType);
     HRESULT hr = CopyType(in_media_type, copyType);
@@ -496,6 +499,7 @@ HRESULT NegotiateInputType(IMFTransform * transform, DWORD stream_index, IMFMedi
     //CComPtr<IMFMediaType> outputType = CreateMediaType(major, neededInputType);
    // HRESULT hr = CopyType(in_media_type, outputType);
    // THROW_ON_FAIL(hr);
+    
     hr = transform->SetInputType(stream_index, copyType, 0);
     return hr;
     /*
